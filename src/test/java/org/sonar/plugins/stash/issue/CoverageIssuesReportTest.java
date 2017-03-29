@@ -14,6 +14,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import org.sonar.plugins.stash.issue.coverage.CoverageIssue;
+import org.sonar.plugins.stash.issue.coverage.CoverageIssuesReport;
 
 public class CoverageIssuesReportTest extends Report {
   

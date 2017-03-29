@@ -4,7 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.sonar.api.batch.fs.InputFile;
-import org.sonar.plugins.stash.InputFileCache;
+import org.sonar.plugins.stash.utils.InputFileCache;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;

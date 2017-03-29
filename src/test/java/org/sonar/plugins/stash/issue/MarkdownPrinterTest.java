@@ -6,13 +6,15 @@ import static org.junit.Assert.assertTrue;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonar.plugins.stash.PullRequestRef;
+import org.sonar.plugins.stash.config.PullRequestRef;
+import org.sonar.plugins.stash.issue.coverage.CoverageIssue;
+import org.sonar.plugins.stash.issue.coverage.CoverageIssuesReport;
 
 public class MarkdownPrinterTest {
   
   CoverageIssue coverageIssue;
   
-  SonarQubeIssuesReport issueReport = new SonarQubeIssuesReport();
+  SonarIssuesReport issueReport = new SonarIssuesReport();
   
   CoverageIssuesReport coverageReport = new CoverageIssuesReport();
   
@@ -20,9 +22,9 @@ public class MarkdownPrinterTest {
   private static final String STASH_URL = "stash/URL";
   
   PullRequestRef pr = PullRequestRef.builder()
-          .setProject("stashProject")
-          .setRepository("stashRepo")
-          .setPullRequestId(1)
+          .project("stashProject")
+          .repository("stashRepo")
+          .id(1)
           .build();
 
   
@@ -75,7 +77,7 @@ public class MarkdownPrinterTest {
   
   @Test
   public void testPrintIssueNumberBySeverityMarkdownWithNoIssues() {
-    SonarQubeIssuesReport issueReport = new SonarQubeIssuesReport();
+    SonarIssuesReport issueReport = new SonarIssuesReport();
     CoverageIssuesReport coverageReport = new CoverageIssuesReport();
     
     String issueReportMarkdown = MarkdownPrinter.printIssueNumberBySeverityMarkdown(issueReport, coverageReport, "BLOCKER");
@@ -96,7 +98,7 @@ public class MarkdownPrinterTest {
 
   @Test
   public void testPrintIssueNumberBySeverityMarkdownWithNoSonarQubeIssues() {
-    SonarQubeIssuesReport issueReport = new SonarQubeIssuesReport();
+    SonarIssuesReport issueReport = new SonarIssuesReport();
     
     String issueReportMarkdown = MarkdownPrinter.printIssueNumberBySeverityMarkdown(issueReport, coverageReport, "BLOCKER");
     assertTrue(StringUtils.equals(issueReportMarkdown, "| BLOCKER | 0 |\n"));
@@ -189,7 +191,7 @@ public class MarkdownPrinterTest {
   public void testPrintEmptyReportMarkdown() {
     int issueThreshold = 100;
     
-    SonarQubeIssuesReport issueReport = new SonarQubeIssuesReport();
+    SonarIssuesReport issueReport = new SonarIssuesReport();
     CoverageIssuesReport coverageReport = new CoverageIssuesReport();
     
     String issueReportMarkdown = MarkdownPrinter.printReportMarkdown(pr, STASH_URL, SONAR_URL, issueReport, coverageReport, issueThreshold);
@@ -201,7 +203,7 @@ public class MarkdownPrinterTest {
   
   @Test
   public void testPrintReportMarkdownWithEmptySonarQubeReportAndWithLoweredIssues() {
-    issueReport = new SonarQubeIssuesReport();
+    issueReport = new SonarIssuesReport();
     
     String issueReportMarkdown = MarkdownPrinter.printReportMarkdown(pr, STASH_URL, SONAR_URL, issueReport, coverageReport, 100);
     String reportString = "## SonarQube analysis Overview\n"

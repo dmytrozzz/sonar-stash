@@ -1,86 +1,57 @@
 package org.sonar.plugins.stash.client;
 
+import org.sonar.api.utils.log.Logger;
+import org.sonar.api.utils.log.Loggers;
+import org.sonar.plugins.stash.client.sonar.models.SonarCoverage;
+
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.text.MessageFormat;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.List;
 
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.BoundRequestBuilder;
-import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.sonar.plugins.stash.exceptions.SonarQubeClientException;
-import org.sonar.plugins.stash.exceptions.SonarQubeReportExtractionException;
-import org.sonar.plugins.stash.issue.collector.SonarQubeCollector;
+import lombok.Getter;
+import retrofit2.Call;
+import retrofit2.Response;
+import retrofit2.http.GET;
+import retrofit2.http.Query;
 
+@Getter
 public class SonarQubeClient {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(SonarQubeClient.class);
-  
-  private static final int SONAR_TIMEOUT = 1000;
-  
-  static final String REST_API = "/api/";
-  static final String RESOURCE_API = REST_API + "resources"; 
-  static final String COVERAGE_RESOURCE_API = "{0}" + RESOURCE_API + "?resource={1}&metrics=line_coverage&format=json"; 
-  
-  private final String sonarHostUrl;
-   
-  public SonarQubeClient(String sonarHostUrl) {
-    this.sonarHostUrl = sonarHostUrl;
-  }
+    private static final Logger LOGGER = Loggers.get(SonarQubeClient.class);
 
-  public String getBaseUrl() {
-      return this.sonarHostUrl;
-  }
+    private final String baseUrl;
+    private final SonarApi sonarApi;
 
-  public double getCoveragePerProject(String projectKey) throws SonarQubeClientException {
-    return getCoverage(projectKey);
-  }
-  
-  public double getCoveragePerFile(String projectKey, String filePath) throws SonarQubeClientException {
-    return getCoverage(projectKey + ":" + filePath);
-  }
- 
-  private double getCoverage(String key) throws SonarQubeClientException {
-    double result = 0;
-    AsyncHttpClient httpClient = createHttpClient();
-    
-    try {
-      String request = MessageFormat.format(COVERAGE_RESOURCE_API, sonarHostUrl, key);
-      BoundRequestBuilder requestBuilder = httpClient.prepareGet(request);
-  
-      Response response = executeRequest(requestBuilder);
-      int responseCode = response.getStatusCode();
-      if (responseCode != HttpURLConnection.HTTP_OK) {
-        LOGGER.debug("Unable to get the coverage on resource " + key + ": " + response.getStatusText() + "(" + responseCode + ")" );
-      } else {
-        String jsonBody = response.getResponseBody();
-        result = SonarQubeCollector.extractCoverage(jsonBody);
-      }
-    } catch (ExecutionException | TimeoutException | InterruptedException | IOException | SonarQubeReportExtractionException e) {
-      throw new SonarQubeClientException("Unable to get the coverage on resource " + key, e);
-    } finally {
-      try {
-        httpClient.close();
-      } catch (IOException ignored) {
-          /* ignore */
-      }
+    public SonarQubeClient(String baseUrl) {
+        this.baseUrl = baseUrl;
+        sonarApi = ClientFactory.buildRetrofit(baseUrl, 10).build().create(SonarApi.class);
     }
-    
-    return result;
-  }
-  
-  Response executeRequest(final BoundRequestBuilder requestBuilder) throws InterruptedException, IOException, ExecutionException, TimeoutException {
 
-    requestBuilder.addHeader("Content-Type", "application/json");
-    return requestBuilder.execute().get(SONAR_TIMEOUT, TimeUnit.MILLISECONDS);
-  }
+    public double getCoveragePerProject(String projectKey) {
+        return getCoverage(projectKey);
+    }
 
-  AsyncHttpClient createHttpClient(){
-    return new DefaultAsyncHttpClient();
-  }
+    public double getCoveragePerFile(String projectKey, String filePath) {
+        return getCoverage(projectKey + ":" + filePath);
+    }
+
+    private double getCoverage(String key) {
+        try {
+            Response<List<SonarCoverage>> response = getSonarApi().getCoverage(key).execute();
+            if (!response.isSuccessful()) {
+                LOGGER.debug("Unable to get the coverage on resource " + key + ": " + response.errorBody().string() + "(" + response.code() + ")");
+            } else {
+                List<SonarCoverage> coverage = response.body();
+                return coverage.size() > 0 ? coverage.get(0).getCoverage() : 0;
+            }
+        } catch (IOException e) {
+            LOGGER.error("Unable to get the coverage on resource " + key, e);
+        }
+        return 0;
+    }
+
+    public interface SonarApi {
+
+        @GET("/api/resources?metrics=line_coverage&format=json")
+        Call<List<SonarCoverage>> getCoverage(@Query("resource") String resource);
+    }
 }

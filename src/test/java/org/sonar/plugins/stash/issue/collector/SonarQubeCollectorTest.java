@@ -27,15 +27,14 @@ import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.measures.Measure;
 import org.sonar.api.resources.Resource;
 import org.sonar.api.rule.RuleKey;
-import org.sonar.plugins.stash.InputFileCache;
-import org.sonar.plugins.stash.InputFileCacheSensor;
+import org.sonar.plugins.stash.issue.SonarIssuesReport;
+import org.sonar.plugins.stash.service.SonarService;
+import org.sonar.plugins.stash.utils.InputFileCache;
 import org.sonar.plugins.stash.client.SonarQubeClient;
 import org.sonar.plugins.stash.exceptions.SonarQubeClientException;
-import org.sonar.plugins.stash.exceptions.SonarQubeReportExtractionException;
-import org.sonar.plugins.stash.issue.CoverageIssue;
-import org.sonar.plugins.stash.issue.CoverageIssuesReport;
+import org.sonar.plugins.stash.issue.coverage.CoverageIssue;
+import org.sonar.plugins.stash.issue.coverage.CoverageIssuesReport;
 import org.sonar.plugins.stash.issue.SonarQubeIssue;
-import org.sonar.plugins.stash.issue.SonarQubeIssuesReport;
 
 
 public class SonarQubeCollectorTest {
@@ -55,7 +54,7 @@ public class SonarQubeCollectorTest {
   Issue issue2;
   
   @Mock
-  InputFileCacheSensor inputFileCacheSensor;
+  InputFileCache mInputFileCache;
   
   @Mock
   SensorContext context;
@@ -119,8 +118,8 @@ public class SonarQubeCollectorTest {
     when(fileSystem.inputFiles((FilePredicate) anyObject())).thenReturn(inputFiles);
     when(fileSystem.predicates()).thenReturn(filePredicates);
     
-    inputFileCacheSensor = mock(InputFileCacheSensor.class);
-    when(inputFileCacheSensor.getFileSystem()).thenReturn(fileSystem);
+    mInputFileCache = mock(InputFileCache.class);
+    when(mInputFileCache.getFileSystem()).thenReturn(fileSystem);
     
     
     ///////// Metric object ////////
@@ -187,7 +186,7 @@ public class SonarQubeCollectorTest {
     ArrayList<Issue> issues = new ArrayList<Issue>();
     when(projectIssues.issues()).thenReturn(issues);
     
-    SonarQubeIssuesReport report = SonarQubeCollector.extractIssueReport(projectIssues, inputFileCache, projectBaseDir);
+    SonarIssuesReport report = SonarService.extractIssueReport(projectIssues, inputFileCache, projectBaseDir);
     assertTrue(report.countIssues() == 0);
   }
   
@@ -198,7 +197,7 @@ public class SonarQubeCollectorTest {
     issues.add(issue2);
     when(projectIssues.issues()).thenReturn(issues);
     
-    SonarQubeIssuesReport report = SonarQubeCollector.extractIssueReport(projectIssues, inputFileCache, projectBaseDir);
+    SonarIssuesReport report = SonarService.extractIssueReport(projectIssues, inputFileCache, projectBaseDir);
     assertTrue(report.countIssues() == 2);
     assertTrue(report.countIssues("severity1") == 1);
     assertTrue(report.countIssues("severity2") == 1);
@@ -223,7 +222,7 @@ public class SonarQubeCollectorTest {
     issues.add(issue1);
     when(projectIssues.issues()).thenReturn(issues);
     
-    SonarQubeIssuesReport report = SonarQubeCollector.extractIssueReport(projectIssues, inputFileCache, projectBaseDir);
+    SonarIssuesReport report = SonarService.extractIssueReport(projectIssues, inputFileCache, projectBaseDir);
     assertTrue(report.countIssues() == 1);
     assertTrue(report.countIssues("severity1") == 1);
     assertTrue(report.countIssues("severity2") == 0);
@@ -245,7 +244,7 @@ public class SonarQubeCollectorTest {
     issues.add(issue2);
     when(projectIssues.issues()).thenReturn(issues);
     
-    SonarQubeIssuesReport report = SonarQubeCollector.extractIssueReport(projectIssues, inputFileCache, projectBaseDir);
+    SonarIssuesReport report = SonarService.extractIssueReport(projectIssues, inputFileCache, projectBaseDir);
     assertTrue(report.countIssues() == 1);
     assertTrue(report.countIssues("severity1") == 0);
     assertTrue(report.countIssues("severity2") == 1);
@@ -260,7 +259,7 @@ public class SonarQubeCollectorTest {
     issues.add(issue2);
     when(projectIssues.issues()).thenReturn(issues);
     
-    SonarQubeIssuesReport report = SonarQubeCollector.extractIssueReport(projectIssues, inputFileCache, projectBaseDir);
+    SonarIssuesReport report = SonarService.extractIssueReport(projectIssues, inputFileCache, projectBaseDir);
     assertTrue(report.countIssues() == 1);
     assertTrue(report.countIssues("severity1") == 0);
     assertTrue(report.countIssues("severity2") == 1);
@@ -273,7 +272,7 @@ public class SonarQubeCollectorTest {
   
   @Test
   public void testExtractCoverageReport() throws SonarQubeClientException {
-    CoverageIssuesReport result = SonarQubeCollector.extractCoverageReport("SonarQubeProject", context, inputFileCacheSensor, "MAJOR", sonarqubeClient);
+    CoverageIssuesReport result = new SonarService(sonarqubeClient).extractCoverageReport("SonarQubeProject", context, mInputFileCache, "MAJOR");
     
     assertEquals(2, result.countIssues());
     
@@ -302,10 +301,10 @@ public class SonarQubeCollectorTest {
     when(fileSystem.inputFiles((FilePredicate) anyObject())).thenReturn(inputFiles);
     when(fileSystem.predicates()).thenReturn(filePredicates);
     
-    inputFileCacheSensor = mock(InputFileCacheSensor.class);
-    when(inputFileCacheSensor.getFileSystem()).thenReturn(fileSystem);
+    mInputFileCache = mock(InputFileCache.class);
+    when(mInputFileCache.getFileSystem()).thenReturn(fileSystem);
     
-    CoverageIssuesReport result = SonarQubeCollector.extractCoverageReport("SonarQubeProject", context, inputFileCacheSensor, "MAJOR", sonarqubeClient);
+    CoverageIssuesReport result = new SonarService(sonarqubeClient).extractCoverageReport("SonarQubeProject", context, mInputFileCache, "MAJOR");
     
     assertEquals(0, result.countIssues());
     assertTrue("Previous expected project code coverage: 65.0 but was " + result.getPreviousProjectCoverage(), result.getPreviousProjectCoverage() == 65.0);
@@ -320,7 +319,7 @@ public class SonarQubeCollectorTest {
     when(context.getMeasure(resource2, CoreMetrics.UNCOVERED_LINES)).thenReturn(null);
     when(context.getMeasure(resource2, CoreMetrics.LINES_TO_COVER)).thenReturn(measure4);
     
-    CoverageIssuesReport result = SonarQubeCollector.extractCoverageReport("SonarQubeProject", context, inputFileCacheSensor, "MAJOR", sonarqubeClient);
+    CoverageIssuesReport result = new SonarService(sonarqubeClient).extractCoverageReport("SonarQubeProject", context, mInputFileCache, "MAJOR");
   
     assertEquals(0, result.countIssues());
     assertTrue("Previous expected project code coverage: 65.0 but was " + result.getPreviousProjectCoverage(), result.getPreviousProjectCoverage() == 65.0);
@@ -335,7 +334,7 @@ public class SonarQubeCollectorTest {
     when(context.getMeasure(resource2, CoreMetrics.UNCOVERED_LINES)).thenReturn(measure3);
     when(context.getMeasure(resource2, CoreMetrics.LINES_TO_COVER)).thenReturn(null);
     
-    CoverageIssuesReport result = SonarQubeCollector.extractCoverageReport("SonarQubeProject", context, inputFileCacheSensor, "MAJOR", sonarqubeClient);
+    CoverageIssuesReport result = new SonarService(sonarqubeClient).extractCoverageReport("SonarQubeProject", context, mInputFileCache, "MAJOR");
   
     assertEquals(0, result.countIssues());
     assertTrue("Previous expected project code coverage: 65.0 but was " + result.getPreviousProjectCoverage(), result.getPreviousProjectCoverage() == 65.0);
@@ -350,7 +349,7 @@ public class SonarQubeCollectorTest {
     when(context.getMeasure(resource2, CoreMetrics.UNCOVERED_LINES)).thenReturn(measure3);
     when(context.getMeasure(resource2, CoreMetrics.LINES_TO_COVER)).thenReturn(measure4);
      
-    CoverageIssuesReport result = SonarQubeCollector.extractCoverageReport("SonarQubeProject", context, inputFileCacheSensor, "MAJOR", sonarqubeClient);
+    CoverageIssuesReport result = new SonarService(sonarqubeClient).extractCoverageReport("SonarQubeProject", context, mInputFileCache, "MAJOR");
   
     assertEquals(1, result.countIssues());
     
@@ -371,7 +370,7 @@ public class SonarQubeCollectorTest {
     when(context.getMeasure(resource2, CoreMetrics.UNCOVERED_LINES)).thenReturn(null);
     when(context.getMeasure(resource2, CoreMetrics.LINES_TO_COVER)).thenReturn(null);
      
-    CoverageIssuesReport result = SonarQubeCollector.extractCoverageReport("SonarQubeProject", context, inputFileCacheSensor, "MAJOR", sonarqubeClient);
+    CoverageIssuesReport result = new SonarService(sonarqubeClient).extractCoverageReport("SonarQubeProject", context, mInputFileCache, "MAJOR");
   
     assertEquals(0, result.countIssues());
   }
@@ -381,41 +380,12 @@ public class SonarQubeCollectorTest {
     doThrow(new SonarQubeClientException("SonarQubeClientException for Test")).when(sonarqubeClient).getCoveragePerFile(anyString(), anyString());
     
     try {
-      SonarQubeCollector.extractCoverageReport("SonarQubeProject", context, inputFileCacheSensor, "MAJOR", sonarqubeClient);
+      new SonarService(sonarqubeClient).extractCoverageReport("SonarQubeProject", context, mInputFileCache, "MAJOR");
     
       assertFalse("extractCoverageReport should raise a SonarQubeClientException", true);
     
     } catch (SonarQubeClientException e) {
       assertTrue("extractCoverageReport has raised the expected SonarQubeClientException", true);
-    }
-  }
-  
-  @Test
-  public void testExtractCoverage() throws SonarQubeReportExtractionException {
-    String jsonBody = "[{\"msr\": [{\"key\": \"line_coverage\", \"val\": 10.12345}]}]";
-    
-    double coverage = SonarQubeCollector.extractCoverage(jsonBody);
-    assertTrue("Expected coverage: 10.12345 but was " + coverage, coverage == 10.12345);
-  }
-  
-  @Test
-  public void testExtractCoverageWithNoline_coverage() throws SonarQubeReportExtractionException {
-    String jsonBody = "[{\"msr\": [{\"key\": \"metric\", \"val\": 10.12345}]}]";
-    
-    double coverage = SonarQubeCollector.extractCoverage(jsonBody);
-    assertTrue("Expected coverage: 0 but was " + coverage, coverage == 0);
-  }
-  
-  @Test
-  public void testExtractCoverageWithParseException() throws SonarQubeReportExtractionException {
-    String jsonBody = "[{\"msr\": [{\"key\": \"metric\", \"val\": 10.12345]}]";
-    
-    try {
-      SonarQubeCollector.extractCoverage(jsonBody);
-      assertFalse("No ParseException has been raised", true);
-    
-    } catch (SonarQubeReportExtractionException e) {
-      assertTrue("ParseException has been raised as expected", true);
     }
   }
 }

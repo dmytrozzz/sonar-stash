@@ -1,0 +1,84 @@
+plugins {
+    id "com.iadams.sonar-packaging" version "0.1.4"
+}
+
+sonarPackaging {
+    serverUrl = 'http://localhost:9000'
+    pluginDir = '/Users/dmyto.khaynas/Documents/Software/Sonar/sonarqube-6.3/extensions/plugins'
+    pluginKey = 'dmytrozzzsonarbitbucket'
+    pluginClass = 'org.sonar.plugins.stash.BitbucketPlugin'
+    pluginName = 'SonarBitbucket'
+    pluginDescription = 'Sonar to post in Bitbucket Server PSs plugin.'
+    pluginParent = null
+    pluginLicense = 'MIT'
+    requirePlugins = null
+    pluginUrl = 'http://mypluginwebsite.com'
+    pluginIssueTrackerUrl = 'http://mypluginwebsite.com/issues'
+    pluginTermsConditionsUrl = 'http://mypluginwebsite.com/terms'
+    pluginSourceUrl = 'http://github.com'
+    pluginDevelopers = 'Dmytro Khaynas'
+    skipDependenciesPackaging = false
+    useChildFirstClassLoader = false
+    basePlugin = ''
+    organization {
+        name = 'company-corp'
+        url = 'http://company-corp.com'
+    }
+}
+
+compileJava.dependsOn clean
+pluginPackaging.dependsOn compileJava
+pluginPackaging.doLast {
+    //exec {
+        //logger.lifecycle 'Clear sonarqube cache'
+        //commandLine 'rm', '-r', '/Users/dmytro.khaynas/.sonar/cache'
+        //commandLine 'rm', '-r', '../sonarqube-6.3/temp'
+        //commandLine 'rm', '-f', '../sonarqube-6.3/extensions/plugins/dmytrozzz-sonar-stash.jar'
+    //}
+    exec {
+        logger.lifecycle 'Copy to sonarqube'
+        commandLine 'cp', 'build/libs/dmytrozzz-sonar-stash.jar', '../sonarqube-6.3/extensions/plugins/'
+    }
+    exec {
+        logger.lifecycle 'Restart sonarqube'
+        commandLine '../sonarqube-6.3/bin/macosx-universal-64/sonar.sh', 'restart'
+    }
+}
+
+apply plugin: 'java'
+
+jar {
+    baseName = 'dmytrozzz-sonar-bitbucket'
+    version = '0.9.0-SNAPSHOT'
+}
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    providedRuntime
+}
+
+dependencies {
+    provided "org.sonarsource.sonarqube:sonar-plugin-api:6.3"
+
+    compileOnly "org.projectlombok:lombok:1.16.16"
+
+    compile "com.squareup.retrofit2:retrofit:2.2.0"
+    compile "com.squareup.retrofit2:converter-gson:2.2.0"
+    compile "com.squareup.okhttp3:logging-interceptor:3.6.0"
+    compile "com.google.code.gson:gson:2.8.0"
+
+    //Current plugin packager doesn't support transitive dependencies so need to include this in addition
+    compile "com.squareup.okhttp3:okhttp:3.6.0"
+    compile "com.squareup.okio:okio:1.11.0"
+
+    testCompile "junit:junit:4.12"
+    testCompile "com.squareup.okhttp3:mockwebserver:3.6.0"
+    testCompile "org.mockito:mockito-core:1.9.5"
+    testCompile "org.slf4j:slf4j-jdk14:1.7.21"
+    testCompile "com.github.tomakehurst:wiremock:2.1.11"
+    testCompile "com.google.guava:guava:19.0"
+    testCompile "com.github.stefanbirkner:system-rules:1.16.0"
+}

@@ -8,8 +8,6 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.sonar.plugins.stash.client.StashClient;
-import org.sonar.plugins.stash.client.StashCredentials;
 import org.sonar.plugins.stash.fixtures.MavenSonarFixtures;
 import org.sonar.plugins.stash.fixtures.SonarQubeRule;
 import org.sonar.plugins.stash.fixtures.SonarScanner;
@@ -20,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import static org.sonar.plugins.stash.client.StashClientTest.aJsonResponse;
+import static org.sonar.plugins.stash.client.BitbucketClientTest.aJsonResponse;
 
 public class CompleteITCase {
     protected static SonarScanner sonarScanner;
@@ -34,6 +32,8 @@ public class CompleteITCase {
     protected static final String sonarQubeName = "Integration test project";
     protected static final int stashPullRequest = 42;
 
+    private static final String TEST_SOURCES = "/Users/dmytro.khaynas/Documents/Software/Sonar/dmytrozzz-sonar-stash/src";
+
     @Rule
     public WireMockRule wireMock = new WireMockRule(WireMockConfiguration.options().port(8080));
     @ClassRule
@@ -41,13 +41,13 @@ public class CompleteITCase {
 
     @BeforeClass
     public static void setUpClass() throws Exception {
-        sonarqube.get().installPlugin(new File(System.getProperty("test.plugin.archive")));
+        //sonarqube.get().installPlugin(new File(System.getProperty("test.plugin.archive")));
         sonarqube.start();
         sonarqube.get().createProject(sonarQubeKey, sonarQubeName);
 
         sonarScanner = MavenSonarFixtures.getSonarScanner();
 
-        sourcesDir = new File(System.getProperty("test.sources.dir"));
+        sourcesDir = new File(TEST_SOURCES);
         sourcesDir.mkdirs();
     }
 
