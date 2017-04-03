@@ -1,7 +1,7 @@
 package org.sonar.plugins.stash.config;
 
-import org.sonar.api.BatchComponent;
 import org.sonar.api.batch.InstantiationStrategy;
+import org.sonar.api.batch.ScannerSide;
 import org.sonar.api.config.Settings;
 import org.sonar.plugins.stash.BitbucketPlugin;
 import org.sonar.plugins.stash.exceptions.StashConfigurationException;
@@ -9,7 +9,8 @@ import org.sonar.plugins.stash.exceptions.StashConfigurationException;
 import java.text.MessageFormat;
 
 @InstantiationStrategy(InstantiationStrategy.PER_BATCH)
-public class StashPluginConfiguration implements BatchComponent {
+@ScannerSide
+public class StashPluginConfiguration {
 
     private static final String EXCEPTION_STASH_CONF = "Unable to get {0} from plugin configuration (value is empty)";
 
