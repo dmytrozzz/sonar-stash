@@ -21,29 +21,29 @@ sonarPackaging {
     useChildFirstClassLoader = false
     basePlugin = ''
     organization {
-        name = 'company-corp'
-        url = 'http://company-corp.com'
+        name = 'Dmytro Khaynas'
+        url = 'http://javasunday.blogspot.com'
     }
 }
 
 compileJava.dependsOn clean
 pluginPackaging.dependsOn compileJava
-pluginPackaging.doLast {
+//pluginPackaging.doLast {
     //exec {
         //logger.lifecycle 'Clear sonarqube cache'
         //commandLine 'rm', '-r', '/Users/dmytro.khaynas/.sonar/cache'
         //commandLine 'rm', '-r', '../sonarqube-6.3/temp'
         //commandLine 'rm', '-f', '../sonarqube-6.3/extensions/plugins/dmytrozzz-sonar-stash.jar'
     //}
-    exec {
-        logger.lifecycle 'Copy to sonarqube'
-        commandLine 'cp', 'build/libs/dmytrozzz-sonar-stash.jar', '../sonarqube-6.3/extensions/plugins/'
-    }
-    exec {
-        logger.lifecycle 'Restart sonarqube'
-        commandLine '../sonarqube-6.3/bin/macosx-universal-64/sonar.sh', 'restart'
-    }
-}
+//    exec {
+//        logger.lifecycle 'Copy to sonarqube'
+//        commandLine 'cp', 'build/libs/dmytrozzz-sonar-stash.jar', '../sonarqube-6.3/extensions/plugins/'
+//    }
+//    exec {
+//        logger.lifecycle 'Restart sonarqube'
+//        commandLine '../sonarqube-6.3/bin/macosx-universal-64/sonar.sh', 'restart'
+//    }
+//}
 
 apply plugin: 'java'
 
