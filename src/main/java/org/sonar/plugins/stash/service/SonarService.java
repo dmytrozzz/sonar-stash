@@ -12,7 +12,6 @@ import org.sonar.api.utils.log.Loggers;
 import org.sonar.plugins.stash.BitbucketPlugin;
 import org.sonar.plugins.stash.client.SonarQubeClient;
 import org.sonar.plugins.stash.config.StashPluginConfiguration;
-import org.sonar.plugins.stash.exceptions.SonarQubeClientException;
 import org.sonar.plugins.stash.issue.BitbucketIssue;
 
 import java.io.File;
@@ -70,16 +69,16 @@ public class SonarService {
     }
 
     private BitbucketIssue convertToBitbucketIssue(PostJobIssue issue) {
-        Issue sonarIssue = StreamSupport.stream(projectIssues.issues().spliterator(), false)
-                .filter(i -> Objects.equals(i.componentKey(), issue.componentKey()) && Objects.equals(i.ruleKey(), issue.ruleKey()))
-                .findAny().orElse(null);
+//        Issue sonarIssue = StreamSupport.stream(projectIssues.issues().spliterator(), false)
+//                .filter(i -> Objects.equals(i.componentKey(), issue.componentKey()) && Objects.equals(i.ruleKey(), issue.ruleKey()))
+//                .findAny().orElse(null);
         List<String> taskSeverities = getReportedSeverities(configuration.getTaskIssueSeverityThreshold());
 
         String path = issue.inputComponent() != null && issue.inputComponent().isFile() ?
                 baseDir.getName() + "/" + ((InputFile) issue.inputComponent()).relativePath() :
                 issue.componentKey();
 
-        return new BitbucketIssue(issue, sonarIssue, path, taskSeverities.contains(issue.severity().name()), configuration.getSonarQubeURL());
+        return new BitbucketIssue(issue, path, taskSeverities.contains(issue.severity().name()), configuration.getSonarQubeURL());
     }
 
     /**
@@ -109,8 +108,6 @@ public class SonarService {
 
     /**
      * Extract Code Coverage service to be published into the pull-request.
-     *
-     * @throws SonarQubeClientException
      */
 //    public CoverageIssuesReport extractCoverageReport(PostJobContext context, String codeCoverageSeverity) throws SonarQubeClientException {
 //

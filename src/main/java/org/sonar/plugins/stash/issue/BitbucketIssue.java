@@ -13,7 +13,7 @@ import org.sonar.api.issue.Issue;
 public class BitbucketIssue {
     @Delegate
     private final PostJobIssue sonarIssue;
-    private final Issue issue;
+    //private final Issue issue;
     @Getter
     private final String path;
     @Getter
@@ -29,6 +29,6 @@ public class BitbucketIssue {
     }
 
     public String getKey() {
-        return issue != null ? issue.key() : sonarIssue.key();
+        return /*issue != null ? issue.key() :*/ sonarIssue.key();
     }
 }

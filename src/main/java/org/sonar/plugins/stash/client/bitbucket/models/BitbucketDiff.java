@@ -23,6 +23,12 @@ public class BitbucketDiff {
         return "unknown";
     }
 
+    public String getParent() {
+        if (destination != null) return destination.parent;
+        if (source != null) return source.parent;
+        return "unknown";
+    }
+
     @Getter
     @EqualsAndHashCode(of = "toString")
     public static class Source {

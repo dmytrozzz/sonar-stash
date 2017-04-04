@@ -12,7 +12,7 @@ public class IssuePrinter {
 
     public static String printIssueMarkdown(String sonarQubeURL, BitbucketIssue issue) {
         return printSeverityMarkdown(issue.severity()) + issue.message() +
-                " [" + printIssueLink(issue, sonarQubeURL) + " | " + printRuleLink(issue, sonarQubeURL) + "]";
+                " [" + /* printIssueLink(issue, sonarQubeURL) + " | " +*/ printRuleLink(issue, sonarQubeURL) + "]";
     }
 
     public static String printIssueTask(BitbucketIssue issue) {

@@ -30,7 +30,7 @@ public class ReportService {
     private final StashPluginConfiguration pluginConfiguration;
 
     public static ReportService create(StashPluginConfiguration configuration, ProjectIssues projectIssues, File baseDir) throws StashConfigurationException {
-        return new ReportService(SonarService.fromConfig(configuration, projectIssues, baseDir), BitbucketService.fromConfig(configuration), configuration);
+        return new ReportService(SonarService.fromConfig(configuration, projectIssues, baseDir), BitbucketService.fromConfig(configuration, baseDir), configuration);
     }
 
     public void reportFromSonarToBitbucket(PostJobContext context) {

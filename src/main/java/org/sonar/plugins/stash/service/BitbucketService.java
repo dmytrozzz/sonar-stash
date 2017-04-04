@@ -14,6 +14,7 @@ import org.sonar.plugins.stash.config.StashPluginConfiguration;
 import org.sonar.plugins.stash.exceptions.StashConfigurationException;
 import org.sonar.plugins.stash.issue.BitbucketIssue;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,7 @@ public class BitbucketService {
 
     @Getter
     private final BitbucketClient bitbucketClient;
+    private final File baseDir;
 
     /**
      * Push SonarQube report into the Bitbucket pull-request as comments.
@@ -98,7 +100,7 @@ public class BitbucketService {
     /**
      * Will resolve tasks that is not now relevant
      *
-     * @param diffs          diffs of pr
+     * @param diffs     diffs of pr
      * @param allIssues
      */
     private void resolveAndReopenTasks(List<BitbucketDiff> diffs, List<BitbucketIssue> allIssues) {
@@ -109,6 +111,8 @@ public class BitbucketService {
                 .collect(Collectors.toList());
 
         diffs.stream()
+                //only belongs to this project
+                .filter(diff -> Objects.equals(diff.getParent(), baseDir.getName()))
                 .flatMap(BitbucketDiff::getCommentsStream)
                 // only if 1. published by the current Bitbucket user
                 .filter(comment -> currentUser.equals(comment.getAuthor()) &&
@@ -120,7 +124,8 @@ public class BitbucketService {
                 .parallel()
                 .forEach(bitbucketClient::resolveTask);
 
-        List<BitbucketComment> comments = diffs.stream()
+        List<BitbucketComment> projectComments = diffs.stream()
+                .filter(diff -> Objects.equals(diff.getParent(), baseDir.getName()))
                 .flatMap(BitbucketDiff::getCommentsStream)
                 // only if 1. published by the current Bitbucket user
                 .filter(comment -> currentUser.equals(comment.getAuthor()) &&
@@ -129,11 +134,11 @@ public class BitbucketService {
                 .distinct()
                 .collect(Collectors.toList());
 
-        comments.stream()
+        projectComments.stream()
                 .filter(comment -> comment.getTasks() == null || comment.getTasks().isEmpty())
                 .forEach(comment -> bitbucketClient.postTaskOnComment(comment.getText(), comment.getId()));
 
-        comments.stream().flatMap(comment -> comment.getTasks().stream())
+        projectComments.stream().flatMap(comment -> comment.getTasks().stream())
                 .filter(task -> task.getAuthor().equals(currentUser) && !task.isOpen())
                 .parallel()
                 .forEach(bitbucketClient::reopenTask);
@@ -174,13 +179,13 @@ public class BitbucketService {
         LOGGER.info("SonarQube issues reported to Stash by user \"{}\" have been reset", sonarUser.getName());
     }
 
-    static BitbucketService fromConfig(StashPluginConfiguration config) throws StashConfigurationException {
+    static BitbucketService fromConfig(StashPluginConfiguration config, File baseDir) throws StashConfigurationException {
         String stashURL = config.getStashURL();
         int stashTimeout = config.getStashTimeout();
 
         StashCredentials stashCredentials = config.getCredentials();
         PullRequestRef pr = config.getPullRequest();
-        return new BitbucketService(new BitbucketClient(stashURL, stashCredentials, pr, stashTimeout));
+        return new BitbucketService(new BitbucketClient(stashURL, stashCredentials, pr, stashTimeout), baseDir);
     }
 
     /**
