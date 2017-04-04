@@ -12,8 +12,8 @@ sonarPackaging {
     pluginParent = null
     pluginLicense = 'MIT'
     requirePlugins = null
-    pluginUrl = 'http://mypluginwebsite.com'
-    pluginIssueTrackerUrl = 'http://mypluginwebsite.com/issues'
+    pluginUrl = 'https://github.com/dmytrozzz/sonar-stash'
+    pluginIssueTrackerUrl = 'https://github.com/dmytrozzz/sonar-stash/issues'
     pluginTermsConditionsUrl = 'http://mypluginwebsite.com/terms'
     pluginSourceUrl = 'http://github.com'
     pluginDevelopers = 'Dmytro Khaynas'
