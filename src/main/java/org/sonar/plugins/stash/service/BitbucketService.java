@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  */
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class BitbucketService {
+class BitbucketService {
 
     private static final Logger LOGGER = Loggers.get(BitbucketService.class);
 

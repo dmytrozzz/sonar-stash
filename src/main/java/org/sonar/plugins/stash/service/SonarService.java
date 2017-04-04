@@ -26,7 +26,7 @@ import java.util.stream.StreamSupport;
  */
 
 @AllArgsConstructor
-public class SonarService {
+class SonarService {
 
     private static final Logger LOGGER = Loggers.get(BitbucketService.class);
 
