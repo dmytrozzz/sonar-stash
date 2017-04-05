@@ -40,9 +40,7 @@ class BitbucketService {
      */
     void postSonarDiffReport(List<SonarIssue> issues, List<BitbucketDiff> diffs) {
         diffs.stream()
-                //only for current project analysed
-                .filter(diff -> Objects.equals(diff.getParent(), baseDir.getName()))
-                .filter(BitbucketDiff::hasCode)
+                .filter(this::isDiffScannable)
                 .collect(Collectors.toMap(Function.identity(),
                         diff -> issues.stream().filter(issue -> isIssueToPost(diff, issue))
                                 .collect(Collectors.toList())))
@@ -61,6 +59,11 @@ class BitbucketService {
     private boolean isIssueBelongsToDiff(BitbucketDiff diff, SonarIssue issue) {
         //1. they have equal path to file
         return diff.getPath().equals(issue.getPath());
+    }
+
+    private boolean isDiffScannable(BitbucketDiff diff) {
+        //only for current project analysed
+        return diff.hasCode() && Objects.equals(diff.getParent(), baseDir.getName());
     }
 
     private void handleDiff(BitbucketDiff diff, List<SonarIssue> issues) {
@@ -111,13 +114,13 @@ class BitbucketService {
         BitbucketUser currentUser = bitbucketClient.getUser();
 
         List<SonarIssue> diffedIssues = allIssues.stream()
-                .filter(issue -> diffs.stream().filter(BitbucketDiff::hasCode).anyMatch(diff -> isIssueBelongsToDiff(diff, issue)))
+                .filter(issue -> diffs.stream()
+                        .filter(this::isDiffScannable)
+                        .anyMatch(diff -> isIssueBelongsToDiff(diff, issue)))
                 .collect(Collectors.toList());
 
         diffs.stream()
-                .filter(BitbucketDiff::hasCode)
-                //only belongs to this project
-                .filter(diff -> Objects.equals(diff.getParent(), baseDir.getName()))
+                .filter(this::isDiffScannable)
                 .flatMap(BitbucketDiff::getCommentsStream)
                 // only if 1. published by the current Bitbucket user
                 .filter(comment -> currentUser.equals(comment.getAuthor()) &&
@@ -130,8 +133,7 @@ class BitbucketService {
                 .forEach(bitbucketClient::resolveTask);
 
         List<BitbucketComment> projectComments = diffs.stream()
-                .filter(BitbucketDiff::hasCode)
-                .filter(diff -> Objects.equals(diff.getParent(), baseDir.getName()))
+                .filter(this::isDiffScannable)
                 .flatMap(BitbucketDiff::getCommentsStream)
                 // only if 1. published by the current Bitbucket user
                 .filter(comment -> currentUser.equals(comment.getAuthor()) &&
