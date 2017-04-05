@@ -28,22 +28,22 @@ sonarPackaging {
 
 compileJava.dependsOn clean
 pluginPackaging.dependsOn compileJava
-pluginPackaging.doLast {
-    exec {
-        logger.lifecycle 'Clear sonarqube cache'
-        commandLine 'rm', '-r', '/Users/dmytro.khaynas/.sonar/cache'
-        commandLine 'rm', '-r', '../sonarqube-6.3/temp'
-        commandLine 'rm', '-f', '-r', '../sonarqube-6.3/extensions/plugins/*dmytrozzz-sonar-stash*.jar'
-    }
-    exec {
-        logger.lifecycle 'Copy to sonarqube'
-        commandLine 'cp', 'build/libs/dmytrozzz-sonar-stash-0.9.1-SNAPSHOT.jar', '../sonarqube-6.3/extensions/plugins/'
-    }
-    exec {
-        logger.lifecycle 'Restart sonarqube'
-        commandLine '../sonarqube-6.3/bin/macosx-universal-64/sonar.sh', 'restart'
-    }
-}
+//pluginPackaging.doLast {
+//    exec {
+//        logger.lifecycle 'Clear sonarqube cache'
+//        commandLine 'rm', '-r', '/Users/dmytro.khaynas/.sonar/cache'
+//        commandLine 'rm', '-r', '../sonarqube-6.3/temp'
+//        commandLine 'rm', '-f', '-r', '../sonarqube-6.3/extensions/plugins/*dmytrozzz-sonar-stash*.jar'
+//    }
+//    exec {
+//        logger.lifecycle 'Copy to sonarqube'
+//        commandLine 'cp', 'build/libs/dmytrozzz-sonar-stash-0.9.1-SNAPSHOT.jar', '../sonarqube-6.3/extensions/plugins/'
+//    }
+//    exec {
+//        logger.lifecycle 'Restart sonarqube'
+//        commandLine '../sonarqube-6.3/bin/macosx-universal-64/sonar.sh', 'restart'
+//    }
+//}
 
 apply plugin: 'java'
 
