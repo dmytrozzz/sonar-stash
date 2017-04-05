@@ -39,7 +39,9 @@ class BitbucketService {
      * Push SonarQube report into the Bitbucket pull-request as comments.
      */
     void postSonarDiffReport(List<SonarIssue> issues, List<BitbucketDiff> diffs) {
-        diffs.stream().collect(Collectors.toMap(Function.identity(),
+        diffs.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(Function.identity(),
                 diff -> issues.stream().filter(issue -> isIssueToPost(diff, issue))
                         .collect(Collectors.toList())))
                 //.entrySet().stream()
