@@ -41,9 +41,10 @@ class BitbucketService {
     void postSonarDiffReport(List<SonarIssue> issues, List<BitbucketDiff> diffs) {
         diffs.stream()
                 .filter(Objects::nonNull)
+                .filter(diff -> diff.getHunks() != null && !diff.getHunks().isEmpty())
                 .collect(Collectors.toMap(Function.identity(),
-                diff -> issues.stream().filter(issue -> isIssueToPost(diff, issue))
-                        .collect(Collectors.toList())))
+                        diff -> issues.stream().filter(issue -> isIssueToPost(diff, issue))
+                                .collect(Collectors.toList())))
                 //.entrySet().stream()
                 //.filter(entry -> !entry.getValue().isEmpty())
                 .forEach(this::handleDiff);
