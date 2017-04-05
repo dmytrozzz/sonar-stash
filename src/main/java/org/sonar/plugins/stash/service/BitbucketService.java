@@ -12,7 +12,7 @@ import org.sonar.plugins.stash.config.PullRequestRef;
 import org.sonar.plugins.stash.config.StashCredentials;
 import org.sonar.plugins.stash.config.StashPluginConfiguration;
 import org.sonar.plugins.stash.exceptions.StashConfigurationException;
-import org.sonar.plugins.stash.issue.BitbucketIssue;
+import org.sonar.plugins.stash.issue.SonarIssue;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,7 +38,7 @@ class BitbucketService {
     /**
      * Push SonarQube report into the Bitbucket pull-request as comments.
      */
-    void postSonarDiffReport(List<BitbucketIssue> issues, List<BitbucketDiff> diffs) {
+    void postSonarDiffReport(List<SonarIssue> issues, List<BitbucketDiff> diffs) {
         diffs.stream().collect(Collectors.toMap(Function.identity(),
                 diff -> issues.stream().filter(issue -> isIssueToPost(diff, issue))
                         .collect(Collectors.toList())))
@@ -50,38 +50,43 @@ class BitbucketService {
         LOGGER.info("New SonarQube issues have been reported to Stash.");
     }
 
-    private boolean isIssueToPost(BitbucketDiff diff, BitbucketIssue issue) {
+    private boolean isIssueToPost(BitbucketDiff diff, SonarIssue issue) {
         return isIssueBelongsToDiff(diff, issue) &&
                 //2. diff has not yet comments for this issue
                 diff.getCommentsStream().noneMatch(comment -> comment.getText().equals(issue.prettyString()));
     }
 
-    private boolean isIssueBelongsToDiff(BitbucketDiff diff, BitbucketIssue issue) {
+    private boolean isIssueBelongsToDiff(BitbucketDiff diff, SonarIssue issue) {
         //1. they have equal path to file
         return diff.getPath().equals(issue.getPath());
     }
 
-    private void handleDiff(BitbucketDiff diff, List<BitbucketIssue> issues) {
-        diff.getHunks().stream().flatMap(hunk -> hunk.getSegments().stream())
+    private void handleDiff(BitbucketDiff diff, List<SonarIssue> issues) {
+        final List<LineWithSegment> lines = diff.getHunks().stream()
+                .filter(Objects::nonNull)
+                .flatMap(hunk -> hunk.getSegments().stream())
+                .filter(Objects::nonNull)
                 .filter(segment -> !segment.getType().equals(Comment.REMOVED_ISSUE_TYPE))
-                .collect(Collectors.toMap(Function.identity(),
-                        segment -> issues.stream().filter(issue -> isIssueBelongToSegment(segment, issue)).collect(Collectors.toList())))
-                //.entrySet().stream()
-                //.filter(entry -> !entry.getValue().isEmpty())
-                //.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-                .forEach((segment, issueBySegment) -> issueBySegment.forEach(issue -> postBitbucketIssue(segment, issue)));
-    }
+                .flatMap(segment -> segment.getLines().stream().map(line -> new LineWithSegment(line, segment)))
+                .collect(Collectors.toList());
 
-    private boolean isIssueBelongToSegment(BitbucketDiff.Segment segment, BitbucketIssue issue) {
-        return segment.getLines().stream().mapToInt(line -> segment.isTypeOfContext() ? line.getSource() : line.getDestination())
-                .anyMatch(line -> line == issue.getSafeLine());
+        lines.stream()
+                // if both ADDED and CONTEXT hunk points same issue line – prefer ADDED
+                .filter(line -> line.segment.isTypeOfContext() && lines.stream().anyMatch(line1 ->
+                        !line1.segment.isTypeOfContext() && line1.line.getDestination() == line.line.getSource()))
+                //map to collection of issues (with link to segment and line) and allow further work with it
+                .collect(Collectors.toMap(line -> line.segment,
+                        line -> issues.stream()
+                                .filter(issue -> BitbucketIssue.isIssueBelongToSegment(line.segment, issue))
+                                .collect(Collectors.toList())))
+                .forEach((segment, issueBySegment) -> issueBySegment.forEach(issue -> postBitbucketIssue(segment, issue)));
     }
 
     /**
      * Will post a comment to Bitbucket diff.
      * But only if current file and row is in context of PR (in diff)
      */
-    private void postBitbucketIssue(BitbucketDiff.Segment segment, BitbucketIssue issue) {
+    private void postBitbucketIssue(BitbucketDiff.Segment segment, SonarIssue issue) {
         try {
             BitbucketComment comment = bitbucketClient.postCommentOnPRLine(issue.prettyString(), issue.getPath(), issue.getSafeLine(), segment.getType());
 
@@ -103,10 +108,10 @@ class BitbucketService {
      * @param diffs     diffs of pr
      * @param allIssues
      */
-    private void resolveAndReopenTasks(List<BitbucketDiff> diffs, List<BitbucketIssue> allIssues) {
+    private void resolveAndReopenTasks(List<BitbucketDiff> diffs, List<SonarIssue> allIssues) {
         BitbucketUser currentUser = bitbucketClient.getUser();
 
-        List<BitbucketIssue> diffedIssues = allIssues.stream()
+        List<SonarIssue> diffedIssues = allIssues.stream()
                 .filter(issue -> diffs.stream().anyMatch(diff -> isIssueBelongsToDiff(diff, issue)))
                 .collect(Collectors.toList());
 
@@ -188,6 +193,12 @@ class BitbucketService {
         return new BitbucketService(new BitbucketClient(stashURL, stashCredentials, pr, stashTimeout), baseDir);
     }
 
+    @AllArgsConstructor
+    private static class LineWithSegment {
+        private final BitbucketDiff.Line line;
+        private final BitbucketDiff.Segment segment;
+    }
+
     /**
      * Push Code Coverage service into the pull-request as comments.
      */
@@ -209,7 +220,7 @@ class BitbucketService {
     /**
      * Post SQ analysis overview on Stash
      */
-//    void postAnalysisOverview(PullRequestRef pr, String sonarQubeURL, int issueThreshold, List<BitbucketIssue> issues) {
+//    void postAnalysisOverview(PullRequestRef pr, String sonarQubeURL, int issueThreshold, List<SonarIssue> issues) {
 //        bitbucketClient.postCommentOnPR(MarkdownPrinter
 //                .printReportMarkdown(pr, bitbucketClient.getBaseUrl(), sonarQubeURL, issueReport, coverageReport, issueThreshold));
 //        LOGGER.info("SonarQube analysis overview has been reported to Stash.");

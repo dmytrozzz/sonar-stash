@@ -10,7 +10,7 @@ import org.sonar.api.issue.Issue;
  * Created by dmytro.khaynas on 3/31/17.
  */
 @AllArgsConstructor
-public class BitbucketIssue {
+public class SonarIssue {
     @Delegate
     private final PostJobIssue sonarIssue;
     //private final Issue issue;

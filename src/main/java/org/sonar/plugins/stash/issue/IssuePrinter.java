@@ -1,6 +1,5 @@
 package org.sonar.plugins.stash.issue;
 
-import org.sonar.api.batch.postjob.issue.PostJobIssue;
 import org.sonar.api.batch.rule.Severity;
 
 /**
@@ -10,20 +9,20 @@ public class IssuePrinter {
     static final String CODING_RULES_RULE_KEY = "coding_rules#rule_key=";
     static final String ISSUE_LINK = "issues#issues=";
 
-    public static String printIssueMarkdown(String sonarQubeURL, BitbucketIssue issue) {
+    public static String printIssueMarkdown(String sonarQubeURL, SonarIssue issue) {
         return printSeverityMarkdown(issue.severity()) + issue.message() +
                 " [" + /* printIssueLink(issue, sonarQubeURL) + " | " +*/ printRuleLink(issue, sonarQubeURL) + "]";
     }
 
-    public static String printIssueTask(BitbucketIssue issue) {
+    public static String printIssueTask(SonarIssue issue) {
         return issue.message();
     }
 
-    private static String printIssueLink(BitbucketIssue issue, String sonarQubeURL) {
+    private static String printIssueLink(SonarIssue issue, String sonarQubeURL) {
         return printLink("Issue in Sonar", sonarQubeURL + "/" + ISSUE_LINK + issue.getKey());
     }
 
-    private static String printRuleLink(BitbucketIssue issue, String sonarQubeURL) {
+    private static String printRuleLink(SonarIssue issue, String sonarQubeURL) {
         return printLink("About rule", sonarQubeURL + "/" + CODING_RULES_RULE_KEY + issue.ruleKey());
     }
 

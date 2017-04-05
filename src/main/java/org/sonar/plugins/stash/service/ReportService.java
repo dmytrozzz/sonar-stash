@@ -10,7 +10,7 @@ import org.sonar.plugins.stash.client.bitbucket.models.BitbucketDiffs;
 import org.sonar.plugins.stash.client.bitbucket.models.BitbucketUser;
 import org.sonar.plugins.stash.config.StashPluginConfiguration;
 import org.sonar.plugins.stash.exceptions.StashConfigurationException;
-import org.sonar.plugins.stash.issue.BitbucketIssue;
+import org.sonar.plugins.stash.issue.SonarIssue;
 
 import java.io.File;
 import java.util.List;
@@ -45,7 +45,7 @@ public class ReportService {
             if (bitbucketUser != null && diffReport != null) {
                 preReportActions(bitbucketUser, diffReport);
 
-                List<BitbucketIssue> issues = sonarService.extractFilteredIssues(context);
+                List<SonarIssue> issues = sonarService.extractFilteredIssues(context);
                 //CoverageIssuesReport coverageReport = codeCoverageReport(context);
                 doReportAction(diffReport, issues);
 
@@ -76,7 +76,7 @@ public class ReportService {
         }
     }
 
-    private void doReportAction(BitbucketDiffs diffReport, List<BitbucketIssue> issues) throws StashConfigurationException {
+    private void doReportAction(BitbucketDiffs diffReport, List<SonarIssue> issues) throws StashConfigurationException {
 
 
         //int issueNumber = issues.size();// + coverageReport.countLoweredIssues();
@@ -100,7 +100,7 @@ public class ReportService {
         return issuesNumber >= pluginConfiguration.getIssueThreshold();
     }
 
-    private void postReportActions(List<BitbucketIssue> issues) {
+    private void postReportActions(List<SonarIssue> issues) {
         int issueNumber = issues.size();// + coverageReport.countLoweredIssues();
 
         // Some local definitions

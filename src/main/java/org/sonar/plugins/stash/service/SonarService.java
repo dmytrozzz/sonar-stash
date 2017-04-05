@@ -4,15 +4,13 @@ import lombok.AllArgsConstructor;
 import org.sonar.api.batch.fs.InputFile;
 import org.sonar.api.batch.postjob.PostJobContext;
 import org.sonar.api.batch.postjob.issue.PostJobIssue;
-import org.sonar.api.batch.rule.Severity;
-import org.sonar.api.issue.Issue;
 import org.sonar.api.issue.ProjectIssues;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.plugins.stash.BitbucketPlugin;
 import org.sonar.plugins.stash.client.SonarQubeClient;
 import org.sonar.plugins.stash.config.StashPluginConfiguration;
-import org.sonar.plugins.stash.issue.BitbucketIssue;
+import org.sonar.plugins.stash.issue.SonarIssue;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -57,7 +55,7 @@ class SonarService {
      * Create issue service according to issue list generated during SonarQube
      * analysis.
      */
-    List<BitbucketIssue> extractFilteredIssues(PostJobContext context) {
+    List<SonarIssue> extractFilteredIssues(PostJobContext context) {
         return StreamSupport.stream(context.issues().spliterator(), false)
                 .filter(this::isIssueNeedsInclude)
                 .map(this::convertToBitbucketIssue)
@@ -68,7 +66,7 @@ class SonarService {
         return true;
     }
 
-    private BitbucketIssue convertToBitbucketIssue(PostJobIssue issue) {
+    private SonarIssue convertToBitbucketIssue(PostJobIssue issue) {
 //        Issue sonarIssue = StreamSupport.stream(projectIssues.issues().spliterator(), false)
 //                .filter(i -> Objects.equals(i.componentKey(), issue.componentKey()) && Objects.equals(i.ruleKey(), issue.ruleKey()))
 //                .findAny().orElse(null);
@@ -78,7 +76,7 @@ class SonarService {
                 baseDir.getName() + "/" + ((InputFile) issue.inputComponent()).relativePath() :
                 issue.componentKey();
 
-        return new BitbucketIssue(issue, path, taskSeverities.contains(issue.severity().name()), configuration.getSonarQubeURL());
+        return new SonarIssue(issue, path, taskSeverities.contains(issue.severity().name()), configuration.getSonarQubeURL());
     }
 
     /**
