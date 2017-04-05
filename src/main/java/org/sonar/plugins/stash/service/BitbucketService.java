@@ -73,22 +73,21 @@ class BitbucketService {
                 .filter(line -> line.segment.isTypeOfContext() && lines.stream().anyMatch(line1 ->
                         !line1.segment.isTypeOfContext() && line1.line.getDestination() == line.line.getSource()))
                 //map to collection of issues (with link to segment and line) and allow further work with it
-                .collect(Collectors.toMap(line -> line.segment,
-                        line -> issues.stream()
-                                .filter(issue -> BitbucketIssue.isIssueBelongToSegment(line.segment, issue))
-                                .collect(Collectors.toList())))
-                .forEach((segment, issueBySegment) -> issueBySegment.forEach(issue -> postBitbucketIssue(segment, issue)));
+                .flatMap(line -> issues.stream()
+                        .filter(issue -> BitbucketIssue.isIssueBelongToSegment(line.segment, issue))
+                        .map(issue -> new BitbucketIssue(issue, line.segment, line.line)))
+                .forEach(this::postBitbucketIssue);
     }
 
     /**
      * Will post a comment to Bitbucket diff.
      * But only if current file and row is in context of PR (in diff)
      */
-    private void postBitbucketIssue(BitbucketDiff.Segment segment, SonarIssue issue) {
+    private void postBitbucketIssue(BitbucketIssue issue) {
         try {
-            BitbucketComment comment = bitbucketClient.postCommentOnPRLine(issue.prettyString(), issue.getPath(), issue.getSafeLine(), segment.getType());
+            BitbucketComment comment = bitbucketClient.postCommentOnPRLine(issue.prettyString(), issue.getPath(), issue.getSafeLine(), issue.getType());
 
-            LOGGER.debug("Comment \"{}\" has been created ({}) on file {} ({})", issue.key(), segment.getType(),
+            LOGGER.debug("Comment \"{}\" has been created ({}) on file {} ({})", issue.key(), issue.getType(),
                     issue.getPath(), issue.getSafeLine());
 
             if (issue.isTaskNeeded()) {
