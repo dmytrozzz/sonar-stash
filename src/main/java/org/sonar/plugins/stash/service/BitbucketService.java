@@ -10,6 +10,7 @@ import org.sonar.plugins.stash.client.bitbucket.models.BitbucketComment;
 import org.sonar.plugins.stash.client.bitbucket.models.BitbucketDiff;
 import org.sonar.plugins.stash.client.bitbucket.models.BitbucketPullRequest;
 import org.sonar.plugins.stash.client.bitbucket.models.BitbucketUser;
+import org.sonar.plugins.stash.client.bitbucket.models.request.CommentRequest;
 import org.sonar.plugins.stash.config.PullRequestRef;
 import org.sonar.plugins.stash.config.StashCredentials;
 import org.sonar.plugins.stash.config.StashPluginConfiguration;
@@ -40,7 +41,7 @@ class BitbucketService {
     /**
      * Push SonarQube report into the Bitbucket pull-request as comments.
      */
-    void postSonarDiffReport(List<SonarIssue> issues, List<BitbucketDiff> diffs) {
+    void postSonarDiffReport(List<SonarIssue> openIssues, List<BitbucketDiff> diffs) {
         Set<BitbucketIssue> openIssuesForPR = diffs.stream()
                 .filter(this::isDiffScannable)
                 //flatter all to BitbucketIssue and then filter (cleaner syntax)
@@ -48,7 +49,7 @@ class BitbucketService {
                         .flatMap(hunk -> hunk.getSegments().stream()
                                 .filter(BitbucketDiff.Segment::isNotRemove)
                                 .flatMap(segment -> segment.getLines().stream()
-                                        .flatMap(line -> issues.stream().map(issue ->
+                                        .flatMap(line -> openIssues.stream().map(issue ->
                                                 new BitbucketIssue(issue, diff, segment, line))))))
                 .filter(BitbucketIssue::isIssueBelongsToDiffAndNew)
                 .filter(BitbucketIssue::isIssueBelongsToLine)
@@ -65,7 +66,7 @@ class BitbucketService {
      * Returns true if diff 1. belongs to current project analysed (by base dir compared) and 2. is not binary
      */
     private boolean isDiffScannable(BitbucketDiff diff) {
-        return diff.hasCode() && Objects.equals(diff.getParent(), baseDir.getName());
+        return diff.hasCode() && Objects.equals(diff.getBaseDir(), baseDir.getName());
     }
 
     /**
@@ -73,15 +74,23 @@ class BitbucketService {
      * But only if current file and row is in context of PR (in diff)
      */
     private void postBitbucketIssue(BitbucketIssue issue) {
-        try {
-            BitbucketComment comment = bitbucketClient.postCommentOnPRLine(issue.getSonarIssue().prettyString(), issue.getSonarIssue().getPath(), issue.getPostLine(), issue.getSegment().getType());
+        CommentRequest commentRequest = CommentRequest.builder()
+                .text(issue.getSonarIssue().message())
+                .line(issue.getPostLine())
+                .fileType(issue.getPostDestination())
+                .type(issue.getSegment().getType())
+                .path(issue.getSonarIssue().getPath())
+                .srcPath(issue.getDiff().getSrcPath())
+                .build();
 
-            LOGGER.debug("Comment \"{}\" has been created ({}) on file {} ({})", issue.getSonarIssue().key(), issue.getSegment().getType(),
-                    issue.getSonarIssue().getPath(), issue.getPostLine());
+        try {
+            BitbucketComment comment = bitbucketClient.postCommentOnPRLine(commentRequest);
+
+            LOGGER.debug("Comment has been created: " + comment.toString() + " : " + issue.getSonarIssue().getPath());
 
             if (issue.getSonarIssue().isTaskNeeded()) {
                 bitbucketClient.postTaskOnComment(issue.getSonarIssue().message(), comment.getId());
-                LOGGER.debug("Comment \"{}\" has been linked to a Stash task", comment.getId());
+                LOGGER.debug("CommentRequest \"{}\" has been linked to a Bitbucket task", comment.getId());
             }
         } catch (IOException e) {
             LOGGER.error("Unable to link SonarQube issue to Stash" + issue.getSonarIssue().key(), e);
@@ -92,7 +101,7 @@ class BitbucketService {
      * Will resolve tasks that is not now relevant
      *
      * @param diffs           diffs of pr
-     * @param openIssuesForPR
+     * @param openIssuesForPR open issues of pr
      */
     private void resolveAndReopenTasks(List<BitbucketDiff> diffs, Set<BitbucketIssue> openIssuesForPR) {
         BitbucketUser currentUser = bitbucketClient.getUser();

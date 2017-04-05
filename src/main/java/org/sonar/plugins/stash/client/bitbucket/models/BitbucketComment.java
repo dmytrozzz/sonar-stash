@@ -2,13 +2,14 @@ package org.sonar.plugins.stash.client.bitbucket.models;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 
 @Getter
 @EqualsAndHashCode(of = {"id"})
+@ToString(of = {"id", "text"})
 public class BitbucketComment {
-
     private long id;
     private int version;
     private String text;

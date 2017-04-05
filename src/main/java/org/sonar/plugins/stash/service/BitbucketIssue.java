@@ -3,6 +3,7 @@ package org.sonar.plugins.stash.service;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.sonar.plugins.stash.client.bitbucket.models.BitbucketDiff;
+import org.sonar.plugins.stash.client.bitbucket.models.request.CommentRequest;
 import org.sonar.plugins.stash.issue.SonarIssue;
 
 import java.util.Objects;
@@ -18,8 +19,12 @@ class BitbucketIssue {
     private final BitbucketDiff.Segment segment;
     private final BitbucketDiff.Line line;
 
-    public int getPostLine() {
+    int getPostLine() {
         return segment.isTypeOfContext() ? line.getSource() : line.getDestination();
+    }
+
+    String getPostDestination() {
+        return segment.isTypeOfContext() ? CommentRequest.FROM_DESTINATION : CommentRequest.TO_DESTINATION;
     }
 
     @Override
@@ -42,11 +47,16 @@ class BitbucketIssue {
      * Return true if issue belongs to specific segment
      */
     boolean isIssueBelongsToLine() {
-        return getPostLine() == sonarIssue.getSafeLine();
+        return line.getDestination() == sonarIssue.getSafeLine();
     }
 
     @Override
     public int hashCode() {
         return getPostLine() * 31 + sonarIssue.key().hashCode() * 31;
+    }
+
+    @Override
+    public String toString() {
+        return "{" + sonarIssue.getPath() + ":::" + segment + ":::" + line + "}";
     }
 }

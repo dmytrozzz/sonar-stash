@@ -4,7 +4,7 @@ import org.sonar.plugins.stash.client.bitbucket.models.BitbucketComment;
 import org.sonar.plugins.stash.client.bitbucket.models.BitbucketDiff;
 import org.sonar.plugins.stash.client.bitbucket.models.BitbucketPullRequest;
 import org.sonar.plugins.stash.client.bitbucket.models.StashCommentReport;
-import org.sonar.plugins.stash.client.bitbucket.models.request.Comment;
+import org.sonar.plugins.stash.client.bitbucket.models.request.CommentRequest;
 
 import java.util.Map;
 
@@ -36,7 +36,7 @@ public interface BitbucketPrApi {
     Call<ResponseBody> postCommentOnPR(@Body Map<String, String> body);
 
     @POST("comments")
-    Call<BitbucketComment> postCommentOnLine(@Body Comment comment);
+    Call<BitbucketComment> postCommentOnLine(@Body CommentRequest commentRequest);
 
     @DELETE("comments/{commentId}")
     Call<Void> deleteCommentFromPR(@Path("commentId") long commentId, @Query("version") long versionId);

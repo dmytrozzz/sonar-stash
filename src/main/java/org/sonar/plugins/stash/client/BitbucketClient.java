@@ -6,8 +6,8 @@ import org.sonar.api.utils.log.Loggers;
 import org.sonar.plugins.stash.client.bitbucket.BitbucketApi;
 import org.sonar.plugins.stash.client.bitbucket.BitbucketPrApi;
 import org.sonar.plugins.stash.client.bitbucket.models.*;
-import org.sonar.plugins.stash.client.bitbucket.models.request.Comment;
-import org.sonar.plugins.stash.client.bitbucket.models.request.CommentTask;
+import org.sonar.plugins.stash.client.bitbucket.models.request.CommentRequest;
+import org.sonar.plugins.stash.client.bitbucket.models.request.CommentTaskRequest;
 import org.sonar.plugins.stash.config.PullRequestRef;
 import org.sonar.plugins.stash.config.StashCredentials;
 
@@ -119,10 +119,9 @@ public class BitbucketClient {
         }
     }
 
-    public BitbucketComment postCommentOnPRLine(String message, String path, int line, String type)
+    public BitbucketComment postCommentOnPRLine(CommentRequest commentRequest)
             throws IOException {
-        Comment comment = new Comment(message, line, type, path);
-        return bitbucketPrApi.postCommentOnLine(comment).execute().body();
+        return bitbucketPrApi.postCommentOnLine(commentRequest).execute().body();
     }
 
     public void addPullRequestReviewer(long pullRequestVersion, List<BitbucketUser> reviewers) {
@@ -136,7 +135,7 @@ public class BitbucketClient {
 
     public void postTaskOnComment(String message, Long commentId) {
         try {
-            bitbucketApi.postTaskOnComment(new CommentTask(commentId, message)).execute();
+            bitbucketApi.postTaskOnComment(new CommentTaskRequest(commentId, message)).execute();
         } catch (IOException e) {
             LOGGER.error("Unable to post a task on comment " + commentId, e);
         }
@@ -175,7 +174,7 @@ public class BitbucketClient {
         try {
             comment.getTasks().forEach(this::deleteTaskOnComment);
             bitbucketPrApi.deleteCommentFromPR(comment.getId(), comment.getVersion()).execute();
-            LOGGER.debug(String.format("Comment %d deleted from pull-request %d", comment.getId(), pr.getId()));
+            LOGGER.debug(String.format("CommentRequest %d deleted from pull-request %d", comment.getId(), pr.getId()));
         } catch (IOException e) {
             LOGGER.error(String.format("Unable to delete comment %d from pull-request %d", comment.getId(), pr.getId()), e);
         }

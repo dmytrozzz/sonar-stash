@@ -2,6 +2,7 @@ package org.sonar.plugins.stash.client.bitbucket.models;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 import java.util.Objects;
@@ -27,9 +28,16 @@ public class BitbucketDiff {
         return "unknown";
     }
 
-    public String getParent() {
-        if (destination != null) return destination.parent;
-        if (source != null) return source.parent;
+    public String getSrcPath() {
+        if (source != null) return source.getToString();
+        return "unknown";
+    }
+
+    public String getBaseDir() {
+        if (destination != null && destination.components != null && destination.components.length > 0)
+            return destination.components[0];
+        if (source != null && source.components != null && source.components.length > 0)
+            return source.components[0];
         return "unknown";
     }
 
@@ -37,6 +45,7 @@ public class BitbucketDiff {
     @EqualsAndHashCode(of = "toString")
     public static class Source {
 
+        private String[] components;
         private String name;
         private String parent;
         private String extension;
@@ -54,6 +63,7 @@ public class BitbucketDiff {
     }
 
     @Getter
+    @ToString
     public static class Segment {
         public static final String CONTEXT_TYPE = "CONTEXT";
         public static final String REMOVED_TYPE = "REMOVED";
@@ -72,6 +82,7 @@ public class BitbucketDiff {
     }
 
     @Getter
+    @ToString
     public static class Line {
 
         private int source;

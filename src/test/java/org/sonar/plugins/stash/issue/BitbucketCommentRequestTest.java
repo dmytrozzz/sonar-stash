@@ -12,7 +12,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BitbucketCommentTest {
+public class BitbucketCommentRequestTest {
 
   @Mock
   BitbucketUser bitbucketUser = mock(BitbucketUser.class);

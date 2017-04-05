@@ -99,7 +99,7 @@ public class BitbucketPlugin implements Plugin {
                         .defaultValue(SEVERITY_NONE)
                         .options(Stream.concat(SEVERITY_LIST.stream(), Stream.of(SEVERITY_NONE)).collect(Collectors.toList())).build(),
                 PropertyDefinition.builder(STASH_INCLUDE_ANALYSIS_OVERVIEW)
-                        .name("Include Analysis Overview Comment")
+                        .name("Include Analysis Overview CommentRequest")
                         .description("Create a comment to  the Pull Request providing a overview of the results")
                         .type(PropertyType.BOOLEAN)
                         .subCategory(CONFIG_PAGE_SUB_CATEGORY_STASH)
