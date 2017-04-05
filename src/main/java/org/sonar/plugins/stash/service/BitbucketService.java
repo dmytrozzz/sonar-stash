@@ -40,6 +40,8 @@ class BitbucketService {
      */
     void postSonarDiffReport(List<SonarIssue> issues, List<BitbucketDiff> diffs) {
         diffs.stream()
+                //only for current project analysed
+                .filter(diff -> Objects.equals(diff.getParent(), baseDir.getName()))
                 .filter(BitbucketDiff::hasCode)
                 .collect(Collectors.toMap(Function.identity(),
                         diff -> issues.stream().filter(issue -> isIssueToPost(diff, issue))
@@ -62,10 +64,10 @@ class BitbucketService {
     }
 
     private void handleDiff(BitbucketDiff diff, List<SonarIssue> issues) {
-        final List<LineWithSegment> lines = diff.getHunks().stream()
+        final List<SegmentLine> lines = diff.getHunks().stream()
                 .flatMap(hunk -> hunk.getSegments().stream())
                 .filter(segment -> !segment.getType().equals(Comment.REMOVED_ISSUE_TYPE))
-                .flatMap(segment -> segment.getLines().stream().map(line -> new LineWithSegment(line, segment)))
+                .flatMap(segment -> segment.getLines().stream().map(line -> new SegmentLine(line, segment)))
                 .collect(Collectors.toList());
 
         lines.stream()
@@ -193,7 +195,7 @@ class BitbucketService {
     }
 
     @AllArgsConstructor
-    private static class LineWithSegment {
+    private static class SegmentLine {
         private final BitbucketDiff.Line line;
         private final BitbucketDiff.Segment segment;
     }

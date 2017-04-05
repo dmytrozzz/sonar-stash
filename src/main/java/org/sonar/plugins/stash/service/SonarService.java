@@ -76,7 +76,7 @@ class SonarService {
                 baseDir.getName() + "/" + ((InputFile) issue.inputComponent()).relativePath() :
                 issue.componentKey();
 
-        return new SonarIssue(issue, path, taskSeverities.contains(issue.severity().name()), configuration.getSonarQubeURL());
+        return new SonarIssue(issue, path, baseDir.getName(), taskSeverities.contains(issue.severity().name()), configuration.getSonarQubeURL());
     }
 
     /**

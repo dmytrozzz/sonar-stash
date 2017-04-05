@@ -4,7 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 import org.sonar.api.batch.postjob.issue.PostJobIssue;
-import org.sonar.api.issue.Issue;
+
+import java.util.Objects;
 
 /**
  * Created by dmytro.khaynas on 3/31/17.
@@ -16,6 +17,7 @@ public class SonarIssue {
     //private final Issue issue;
     @Getter
     private final String path;
+    private final String projectBase;
     @Getter
     private final boolean taskNeeded;
     private final String sonarQubeURL;
@@ -28,7 +30,17 @@ public class SonarIssue {
         return IssuePrinter.printIssueMarkdown(sonarQubeURL, this);
     }
 
-    public String getKey() {
+    String getKey() {
         return /*issue != null ? issue.key() :*/ sonarIssue.key();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof SonarIssue && Objects.equals(key(), sonarIssue.key());
+    }
+
+    @Override
+    public int hashCode() {
+        return sonarIssue.key().hashCode();
     }
 }
