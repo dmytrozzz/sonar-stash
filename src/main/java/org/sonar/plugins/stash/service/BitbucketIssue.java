@@ -14,16 +14,12 @@ import java.util.Objects;
 @Getter
 class BitbucketIssue {
     private final SonarIssue sonarIssue;
+    private final BitbucketDiff diff;
     private final BitbucketDiff.Segment segment;
     private final BitbucketDiff.Line line;
 
     public int getPostLine() {
         return segment.isTypeOfContext() ? line.getSource() : line.getDestination();
-    }
-
-    static boolean isIssueBelongToSegment(BitbucketDiff.Segment segment, SonarIssue issue) {
-        return segment.getLines().stream().mapToInt(line -> segment.isTypeOfContext() ? line.getSource() : line.getDestination())
-                .anyMatch(line -> line == issue.getSafeLine());
     }
 
     @Override
@@ -33,6 +29,20 @@ class BitbucketIssue {
 
     private boolean equalsSpecific(BitbucketIssue issueObj) {
         return getPostLine() == issueObj.getPostLine() && Objects.equals(sonarIssue.key(), issueObj.sonarIssue.key());
+    }
+
+    /**
+     * Return true if 1. diff and issue have equal path to analysed file and 2. Hasn't yet been posted to diff
+     */
+    boolean isIssueBelongsToDiffAndNew() {
+        return diff.getPath().equals(sonarIssue.getPath()) && diff.getCommentsStream().noneMatch(comment -> comment.getText().equals(sonarIssue.prettyString()));
+    }
+
+    /**
+     * Return true if issue belongs to specific segment
+     */
+    boolean isIssueBelongsToLine() {
+        return getPostLine() == sonarIssue.getSafeLine();
     }
 
     @Override

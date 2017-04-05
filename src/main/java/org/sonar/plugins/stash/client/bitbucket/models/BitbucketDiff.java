@@ -65,6 +65,10 @@ public class BitbucketDiff {
         public boolean isTypeOfContext() {
             return Objects.equals(CONTEXT_TYPE, type);
         }
+
+        public boolean isNotRemove() {
+            return !Objects.equals(REMOVED_TYPE, type);
+        }
     }
 
     @Getter

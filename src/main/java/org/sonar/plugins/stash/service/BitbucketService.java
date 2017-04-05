@@ -43,18 +43,15 @@ class BitbucketService {
     void postSonarDiffReport(List<SonarIssue> issues, List<BitbucketDiff> diffs) {
         Set<BitbucketIssue> openIssuesForPR = diffs.stream()
                 .filter(this::isDiffScannable)
-                .flatMap(diff -> issues.stream()
-                        .filter(issue -> isIssueBelongsToDiff(diff, issue))
-                        .map(issue -> new DiffIssue(diff, issue)))
-                .filter(DiffIssue::isAlreadyCommented)
-                .flatMap(diffIssue -> diffIssue.diff.getHunks().stream())
-                .flatMap(hunk -> hunk.getSegments().stream())
-                .filter(segment -> !segment.getType().equals(BitbucketDiff.Segment.REMOVED_TYPE))
-                .flatMap(segment -> segment.getLines().stream().map(line -> new SegmentLine(line, segment)))
-                //map to collection of issues (with link to segment and line) and allow further work with it
-                .flatMap(line -> issues.stream()
-                        .filter(issue -> BitbucketIssue.isIssueBelongToSegment(line.segment, issue))
-                        .map(issue -> new BitbucketIssue(issue, line.segment, line.line)))
+                //flatter all to BitbucketIssue and then filter (cleaner syntax)
+                .flatMap(diff -> diff.getHunks().stream()
+                        .flatMap(hunk -> hunk.getSegments().stream()
+                                .filter(BitbucketDiff.Segment::isNotRemove)
+                                .flatMap(segment -> segment.getLines().stream()
+                                        .flatMap(line -> issues.stream().map(issue ->
+                                                new BitbucketIssue(issue, diff, segment, line))))))
+                .filter(BitbucketIssue::isIssueBelongsToDiffAndNew)
+                .filter(BitbucketIssue::isIssueBelongsToLine)
                 .distinct()
                 .collect(Collectors.toSet());
 
@@ -62,13 +59,6 @@ class BitbucketService {
 
         resolveAndReopenTasks(diffs, openIssuesForPR);
         LOGGER.info("New SonarQube issues have been reported to Stash.");
-    }
-
-    /**
-     * Return true if diff and issue have equal path to analysed file
-     */
-    private boolean isIssueBelongsToDiff(BitbucketDiff diff, SonarIssue issue) {
-        return diff.getPath().equals(issue.getPath());
     }
 
     /**
@@ -101,8 +91,8 @@ class BitbucketService {
     /**
      * Will resolve tasks that is not now relevant
      *
-     * @param diffs     diffs of pr
-     * @param allIssues
+     * @param diffs           diffs of pr
+     * @param openIssuesForPR
      */
     private void resolveAndReopenTasks(List<BitbucketDiff> diffs, Set<BitbucketIssue> openIssuesForPR) {
         BitbucketUser currentUser = bitbucketClient.getUser();
@@ -185,25 +175,6 @@ class BitbucketService {
         StashCredentials stashCredentials = config.getCredentials();
         PullRequestRef pr = config.getPullRequest();
         return new BitbucketService(new BitbucketClient(stashURL, stashCredentials, pr, stashTimeout), baseDir);
-    }
-
-    @AllArgsConstructor
-    private static class SegmentLine {
-        private final BitbucketDiff.Line line;
-        private final BitbucketDiff.Segment segment;
-    }
-
-    @AllArgsConstructor
-    private static class DiffIssue {
-        private final BitbucketDiff diff;
-        private final SonarIssue issue;
-
-        /**
-         * Diff has not yet comments for this issue.
-         */
-        private boolean isAlreadyCommented() {
-            return diff.getCommentsStream().noneMatch(comment -> comment.getText().equals(issue.prettyString()));
-        }
     }
 
     /**
