@@ -1,7 +1,7 @@
 package org.sonar.plugins.stash.service;
 
 import lombok.AllArgsConstructor;
-import lombok.experimental.Delegate;
+import lombok.Getter;
 import org.sonar.plugins.stash.client.bitbucket.models.BitbucketDiff;
 import org.sonar.plugins.stash.issue.SonarIssue;
 
@@ -9,10 +9,9 @@ import org.sonar.plugins.stash.issue.SonarIssue;
  * Created by dmytro.khaynas on 4/4/17.
  */
 @AllArgsConstructor
+@Getter
 class BitbucketIssue {
-    @Delegate
     private final SonarIssue issue;
-    @Delegate
     private final BitbucketDiff.Segment segment;
     private final BitbucketDiff.Line line;
 

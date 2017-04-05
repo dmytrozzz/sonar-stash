@@ -85,17 +85,17 @@ class BitbucketService {
      */
     private void postBitbucketIssue(BitbucketIssue issue) {
         try {
-            BitbucketComment comment = bitbucketClient.postCommentOnPRLine(issue.prettyString(), issue.getPath(), issue.getSafeLine(), issue.getType());
+            BitbucketComment comment = bitbucketClient.postCommentOnPRLine(issue.getIssue().prettyString(), issue.getIssue().getPath(), issue.getIssue().getSafeLine(), issue.getSegment().getType());
 
-            LOGGER.debug("Comment \"{}\" has been created ({}) on file {} ({})", issue.key(), issue.getType(),
-                    issue.getPath(), issue.getSafeLine());
+            LOGGER.debug("Comment \"{}\" has been created ({}) on file {} ({})", issue.getIssue().key(), issue.getSegment().getType(),
+                    issue.getIssue().getPath(), issue.getIssue().getSafeLine());
 
-            if (issue.isTaskNeeded()) {
-                bitbucketClient.postTaskOnComment(issue.message(), comment.getId());
+            if (issue.getIssue().isTaskNeeded()) {
+                bitbucketClient.postTaskOnComment(issue.getIssue().message(), comment.getId());
                 LOGGER.debug("Comment \"{}\" has been linked to a Stash task", comment.getId());
             }
         } catch (IOException e) {
-            LOGGER.error("Unable to link SonarQube issue to Stash" + issue.key(), e);
+            LOGGER.error("Unable to link SonarQube issue to Stash" + issue.getIssue().key(), e);
         }
     }
 
