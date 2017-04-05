@@ -17,6 +17,4 @@ class BitbucketIssue {
         return segment.getLines().stream().mapToInt(line -> segment.isTypeOfContext() ? line.getSource() : line.getDestination())
                 .anyMatch(line -> line == issue.getSafeLine());
     }
-
-
 }

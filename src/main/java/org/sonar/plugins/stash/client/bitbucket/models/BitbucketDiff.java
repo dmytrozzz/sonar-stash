@@ -16,6 +16,11 @@ public class BitbucketDiff {
     private List<Hunk> hunks;
     private List<BitbucketComment> lineComments;
     private List<BitbucketComment> fileComments;
+    private boolean binary;
+
+    public boolean hasCode() {
+        return !binary && hunks != null && !hunks.isEmpty();
+    }
 
     public String getPath() {
         if (destination != null) return destination.getToString();
