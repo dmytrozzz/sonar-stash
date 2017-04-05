@@ -75,7 +75,7 @@ class BitbucketService {
      */
     private void postBitbucketIssue(BitbucketIssue issue) {
         CommentRequest commentRequest = CommentRequest.builder()
-                .text(issue.getSonarIssue().message())
+                .text(issue.getSonarIssue().prettyString())
                 .line(issue.getPostLine())
                 .fileType(issue.getPostDestination())
                 .type(issue.getSegment().getType())

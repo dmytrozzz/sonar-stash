@@ -192,6 +192,8 @@ public class BitbucketClient {
 
     public void deleteTaskOnComment(BitbucketTask task) {
         try {
+            // uncomment only for force deletions:
+            // reopenTask(task);
             bitbucketApi.deleteTask(task.getId()).execute();
         } catch (IOException e) {
             LOGGER.error("Unable to delete task " + task.getId(), e);
