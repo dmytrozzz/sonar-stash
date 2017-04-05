@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -40,7 +41,7 @@ class BitbucketService {
      * Push SonarQube report into the Bitbucket pull-request as comments.
      */
     void postSonarDiffReport(List<SonarIssue> issues, List<BitbucketDiff> diffs) {
-        diffs.stream()
+        Set<BitbucketIssue> openIssuesForPR = diffs.stream()
                 .filter(this::isDiffScannable)
                 .flatMap(diff -> issues.stream()
                         .filter(issue -> isIssueBelongsToDiff(diff, issue))
@@ -55,9 +56,11 @@ class BitbucketService {
                         .filter(issue -> BitbucketIssue.isIssueBelongToSegment(line.segment, issue))
                         .map(issue -> new BitbucketIssue(issue, line.segment, line.line)))
                 .distinct()
-                .forEach(this::postBitbucketIssue);
+                .collect(Collectors.toSet());
 
-        resolveAndReopenTasks(diffs, issues);
+        openIssuesForPR.stream().parallel().forEach(this::postBitbucketIssue);
+
+        resolveAndReopenTasks(diffs, openIssuesForPR);
         LOGGER.info("New SonarQube issues have been reported to Stash.");
     }
 
@@ -101,14 +104,8 @@ class BitbucketService {
      * @param diffs     diffs of pr
      * @param allIssues
      */
-    private void resolveAndReopenTasks(List<BitbucketDiff> diffs, List<SonarIssue> allIssues) {
+    private void resolveAndReopenTasks(List<BitbucketDiff> diffs, Set<BitbucketIssue> openIssuesForPR) {
         BitbucketUser currentUser = bitbucketClient.getUser();
-
-        List<SonarIssue> diffedIssues = allIssues.stream()
-                .filter(issue -> diffs.stream()
-                        .filter(this::isDiffScannable)
-                        .anyMatch(diff -> isIssueBelongsToDiff(diff, issue)))
-                .collect(Collectors.toList());
 
         diffs.stream()
                 .filter(this::isDiffScannable)
@@ -116,7 +113,8 @@ class BitbucketService {
                 // only if 1. published by the current Bitbucket user
                 .filter(comment -> currentUser.equals(comment.getAuthor()) &&
                         //only comments that not contained in issues (probably resolved)
-                        diffedIssues.stream().noneMatch(issue -> Objects.equals(issue.prettyString(), comment.getText())))
+                        openIssuesForPR.stream().noneMatch(issue ->
+                                Objects.equals(issue.getSonarIssue().prettyString(), comment.getText())))
                 .distinct()
                 .flatMap(comment -> comment.getTasks().stream())
                 .filter(task -> task.getAuthor().equals(currentUser) && task.isOpen())
@@ -129,12 +127,14 @@ class BitbucketService {
                 // only if 1. published by the current Bitbucket user
                 .filter(comment -> currentUser.equals(comment.getAuthor()) &&
                         //only comments that is contained in issues (probably reopened)
-                        diffedIssues.stream().anyMatch(issue -> Objects.equals(issue.prettyString(), comment.getText())))
+                        openIssuesForPR.stream().anyMatch(issue ->
+                                Objects.equals(issue.getSonarIssue().prettyString(), comment.getText())))
                 .distinct()
                 .collect(Collectors.toList());
 
         projectComments.stream()
                 .filter(comment -> comment.getTasks() == null || comment.getTasks().isEmpty())
+                .parallel()
                 .forEach(comment -> bitbucketClient.postTaskOnComment(comment.getText(), comment.getId()));
 
         projectComments.stream().flatMap(comment -> comment.getTasks().stream())
