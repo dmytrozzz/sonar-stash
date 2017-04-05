@@ -6,7 +6,7 @@ import org.sonar.api.batch.postjob.PostJobContext;
 import org.sonar.api.issue.ProjectIssues;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
-import org.sonar.plugins.stash.client.bitbucket.models.BitbucketDiffs;
+import org.sonar.plugins.stash.client.bitbucket.models.BitbucketDiff;
 import org.sonar.plugins.stash.client.bitbucket.models.BitbucketUser;
 import org.sonar.plugins.stash.config.StashPluginConfiguration;
 import org.sonar.plugins.stash.exceptions.StashConfigurationException;
@@ -40,7 +40,7 @@ public class ReportService {
             BitbucketUser bitbucketUser = bitbucketService.getBitbucketClient().getUser();
 
             // Get all changes exposed from Stash differential view of the pull-request
-            BitbucketDiffs diffReport = bitbucketService.getBitbucketClient().getPullRequestDiffReport();
+            BitbucketDiff.BitbucketDiffs diffReport = bitbucketService.getBitbucketClient().getPullRequestDiffReport();
 
             if (bitbucketUser != null && diffReport != null) {
                 preReportActions(bitbucketUser, diffReport);
@@ -66,7 +66,7 @@ public class ReportService {
 //        return new CoverageIssuesReport();
 //    }
 
-    private void preReportActions(BitbucketUser user, BitbucketDiffs diffReport) {
+    private void preReportActions(BitbucketUser user, BitbucketDiff.BitbucketDiffs diffReport) {
         // if requested, reset all comments linked to the pull-request
         if (pluginConfiguration.resetComments()) {
             bitbucketService.resetComments(diffReport, user);
@@ -76,7 +76,7 @@ public class ReportService {
         }
     }
 
-    private void doReportAction(BitbucketDiffs diffReport, List<SonarIssue> issues) throws StashConfigurationException {
+    private void doReportAction(BitbucketDiff.BitbucketDiffs diffReport, List<SonarIssue> issues) throws StashConfigurationException {
 
 
         //int issueNumber = issues.size();// + coverageReport.countLoweredIssues();

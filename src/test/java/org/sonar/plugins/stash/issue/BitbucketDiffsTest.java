@@ -29,13 +29,13 @@ public class BitbucketDiffsTest {
     BitbucketComment comment2 = mock(BitbucketComment.class);
     when(comment2.getId()).thenReturn((long) 54321);
     
-//    diff1 = new BitbucketDiff(BitbucketPlugin.CONTEXT_ISSUE_TYPE, "path/to/diff1", (long) 10, (long) 20);
+//    diff1 = new BitbucketDiff(BitbucketPlugin.CONTEXT_TYPE, "path/to/diff1", (long) 10, (long) 20);
 //    diff1.addComment(comment1);
 //
-//    diff2 = new BitbucketDiff(BitbucketPlugin.ADDED_ISSUE_TYPE, "path/to/diff2", (long) 20, (long) 30);
+//    diff2 = new BitbucketDiff(BitbucketPlugin.ADDED_TYPE, "path/to/diff2", (long) 20, (long) 30);
 //    diff2.addComment(comment2);
 //
-//    diff3 = new BitbucketDiff(BitbucketPlugin.CONTEXT_ISSUE_TYPE, "path/to/diff3", (long) 30, (long) 40);
+//    diff3 = new BitbucketDiff(BitbucketPlugin.CONTEXT_TYPE, "path/to/diff3", (long) 30, (long) 40);
     
     report1.add(diff1);
     report1.add(diff2);
@@ -52,7 +52,7 @@ public class BitbucketDiffsTest {
     
     BitbucketDiff result1 = report.getDiffs().get(0);
     assertEquals(result1.getPath(), "path/to/diff1");
-//    assertEquals(result1.getType(), BitbucketPlugin.CONTEXT_ISSUE_TYPE);
+//    assertEquals(result1.getType(), BitbucketPlugin.CONTEXT_TYPE);
 //    assertEquals(result1.getSource(), 10);
 //    assertEquals(result1.getDestination(), 20);
      
@@ -61,7 +61,7 @@ public class BitbucketDiffsTest {
     
     BitbucketDiff result2 = report.getDiffs().get(1);
     assertEquals(result2.getPath(), "path/to/diff2");
-//    assertEquals(result2.getType(), BitbucketPlugin.ADDED_ISSUE_TYPE);
+//    assertEquals(result2.getType(), BitbucketPlugin.ADDED_TYPE);
 //    assertEquals(result2.getSource(), 20);
 //    assertEquals(result2.getDestination(), 30);
   }
@@ -106,7 +106,7 @@ public class BitbucketDiffsTest {
   public void testGetDiffByComment(){
     BitbucketDiff diff1 = report1.getDiffByComment(12345);
     assertEquals(diff1.getPath(), "path/to/diff1");
-//    assertEquals(diff1.getType(), BitbucketPlugin.CONTEXT_ISSUE_TYPE);
+//    assertEquals(diff1.getType(), BitbucketPlugin.CONTEXT_TYPE);
 //    assertEquals(diff1.getSource(), 10);
 //    assertEquals(diff1.getDestination(), 20);
    

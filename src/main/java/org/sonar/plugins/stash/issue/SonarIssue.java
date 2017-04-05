@@ -14,10 +14,8 @@ import java.util.Objects;
 public class SonarIssue {
     @Delegate
     private final PostJobIssue sonarIssue;
-    //private final Issue issue;
     @Getter
     private final String path;
-    private final String projectBase;
     @Getter
     private final boolean taskNeeded;
     private final String sonarQubeURL;
@@ -31,7 +29,7 @@ public class SonarIssue {
     }
 
     String getKey() {
-        return /*issue != null ? issue.key() :*/ sonarIssue.key();
+        return sonarIssue.key();
     }
 
     @Override

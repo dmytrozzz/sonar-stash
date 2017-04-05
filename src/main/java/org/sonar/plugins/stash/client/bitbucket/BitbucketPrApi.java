@@ -1,7 +1,7 @@
 package org.sonar.plugins.stash.client.bitbucket;
 
 import org.sonar.plugins.stash.client.bitbucket.models.BitbucketComment;
-import org.sonar.plugins.stash.client.bitbucket.models.BitbucketDiffs;
+import org.sonar.plugins.stash.client.bitbucket.models.BitbucketDiff;
 import org.sonar.plugins.stash.client.bitbucket.models.BitbucketPullRequest;
 import org.sonar.plugins.stash.client.bitbucket.models.StashCommentReport;
 import org.sonar.plugins.stash.client.bitbucket.models.request.Comment;
@@ -42,5 +42,5 @@ public interface BitbucketPrApi {
     Call<Void> deleteCommentFromPR(@Path("commentId") long commentId, @Query("version") long versionId);
 
     @GET("diff?withComments=true")
-    Call<BitbucketDiffs> getPRDiffs();
+    Call<BitbucketDiff.BitbucketDiffs> getPRDiffs();
 }

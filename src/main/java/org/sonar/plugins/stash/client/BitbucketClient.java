@@ -75,9 +75,9 @@ public class BitbucketClient {
     /**
      * Get all changes exposed through the Stash pull-request.
      */
-    public BitbucketDiffs getPullRequestDiffReport() {
+    public BitbucketDiff.BitbucketDiffs getPullRequestDiffReport() {
         try {
-            BitbucketDiffs result = bitbucketPrApi.getPRDiffs().execute().body();
+            BitbucketDiff.BitbucketDiffs result = bitbucketPrApi.getPRDiffs().execute().body();
             LOGGER.debug("Stash differential service retrieved from pull request {} #{}", pr.getRepository(), pr.getId());
             return result;
         } catch (IOException e) {
@@ -119,7 +119,7 @@ public class BitbucketClient {
         }
     }
 
-    public BitbucketComment postCommentOnPRLine(String message, String path, long line, String type)
+    public BitbucketComment postCommentOnPRLine(String message, String path, int line, String type)
             throws IOException {
         Comment comment = new Comment(message, line, type, path);
         return bitbucketPrApi.postCommentOnLine(comment).execute().body();

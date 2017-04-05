@@ -2,7 +2,6 @@ package org.sonar.plugins.stash.client.bitbucket.models;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.sonar.plugins.stash.client.bitbucket.models.request.Comment;
 
 import java.util.List;
 import java.util.Objects;
@@ -56,12 +55,15 @@ public class BitbucketDiff {
 
     @Getter
     public static class Segment {
+        public static final String CONTEXT_TYPE = "CONTEXT";
+        public static final String REMOVED_TYPE = "REMOVED";
+        public static final String ADDED_TYPE = "ADDED";
 
         private String type;
         private List<Line> lines;
 
         public boolean isTypeOfContext() {
-            return Objects.equals(Comment.CONTEXT_ISSUE_TYPE, type);
+            return Objects.equals(CONTEXT_TYPE, type);
         }
     }
 
@@ -71,6 +73,11 @@ public class BitbucketDiff {
         private int source;
         private int destination;
         private String line;
+    }
+
+    @Getter
+    public static class BitbucketDiffs {
+        private List<BitbucketDiff> diffs;
     }
 
     @Override

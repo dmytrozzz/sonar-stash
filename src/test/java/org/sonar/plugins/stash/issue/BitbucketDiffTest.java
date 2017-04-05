@@ -24,13 +24,13 @@ public class BitbucketDiffTest {
     BitbucketComment comment2 = mock(BitbucketComment.class);
     when(comment2.getId()).thenReturn((long) 54321);
     
-//    diff1 = new BitbucketDiff(BitbucketPlugin.CONTEXT_ISSUE_TYPE, "path/to/diff1", (long) 10, (long) 20);
+//    diff1 = new BitbucketDiff(BitbucketPlugin.CONTEXT_TYPE, "path/to/diff1", (long) 10, (long) 20);
 //    diff1.addComment(comment1);
 //
-//    diff2 = new BitbucketDiff(BitbucketPlugin.ADDED_ISSUE_TYPE, "path/to/diff2", (long) 20, (long) 30);
+//    diff2 = new BitbucketDiff(BitbucketPlugin.ADDED_TYPE, "path/to/diff2", (long) 20, (long) 30);
 //    diff2.addComment(comment2);
 //
-//    diff3 = new BitbucketDiff(BitbucketPlugin.CONTEXT_ISSUE_TYPE, "path/to/diff3", (long) 30, (long) 40);
+//    diff3 = new BitbucketDiff(BitbucketPlugin.CONTEXT_TYPE, "path/to/diff3", (long) 30, (long) 40);
   }
   
   @Test

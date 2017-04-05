@@ -6,8 +6,10 @@ import lombok.Getter;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.plugins.stash.client.BitbucketClient;
-import org.sonar.plugins.stash.client.bitbucket.models.*;
-import org.sonar.plugins.stash.client.bitbucket.models.request.Comment;
+import org.sonar.plugins.stash.client.bitbucket.models.BitbucketComment;
+import org.sonar.plugins.stash.client.bitbucket.models.BitbucketDiff;
+import org.sonar.plugins.stash.client.bitbucket.models.BitbucketPullRequest;
+import org.sonar.plugins.stash.client.bitbucket.models.BitbucketUser;
 import org.sonar.plugins.stash.config.PullRequestRef;
 import org.sonar.plugins.stash.config.StashCredentials;
 import org.sonar.plugins.stash.config.StashPluginConfiguration;
@@ -19,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -41,47 +42,37 @@ class BitbucketService {
     void postSonarDiffReport(List<SonarIssue> issues, List<BitbucketDiff> diffs) {
         diffs.stream()
                 .filter(this::isDiffScannable)
-                .collect(Collectors.toMap(Function.identity(),
-                        diff -> issues.stream().filter(issue -> isIssueToPost(diff, issue))
-                                .collect(Collectors.toList())))
-                .forEach(this::handleDiff);
+                .flatMap(diff -> issues.stream()
+                        .filter(issue -> isIssueBelongsToDiff(diff, issue))
+                        .map(issue -> new DiffIssue(diff, issue)))
+                .filter(DiffIssue::isAlreadyCommented)
+                .flatMap(diffIssue -> diffIssue.diff.getHunks().stream())
+                .flatMap(hunk -> hunk.getSegments().stream())
+                .filter(segment -> !segment.getType().equals(BitbucketDiff.Segment.REMOVED_TYPE))
+                .flatMap(segment -> segment.getLines().stream().map(line -> new SegmentLine(line, segment)))
+                //map to collection of issues (with link to segment and line) and allow further work with it
+                .flatMap(line -> issues.stream()
+                        .filter(issue -> BitbucketIssue.isIssueBelongToSegment(line.segment, issue))
+                        .map(issue -> new BitbucketIssue(issue, line.segment, line.line)))
+                .distinct()
+                .forEach(this::postBitbucketIssue);
 
         resolveAndReopenTasks(diffs, issues);
         LOGGER.info("New SonarQube issues have been reported to Stash.");
     }
 
-    private boolean isIssueToPost(BitbucketDiff diff, SonarIssue issue) {
-        return isIssueBelongsToDiff(diff, issue) &&
-                //2. diff has not yet comments for this issue
-                diff.getCommentsStream().noneMatch(comment -> comment.getText().equals(issue.prettyString()));
-    }
-
+    /**
+     * Return true if diff and issue have equal path to analysed file
+     */
     private boolean isIssueBelongsToDiff(BitbucketDiff diff, SonarIssue issue) {
-        //1. they have equal path to file
         return diff.getPath().equals(issue.getPath());
     }
 
+    /**
+     * Returns true if diff 1. belongs to current project analysed (by base dir compared) and 2. is not binary
+     */
     private boolean isDiffScannable(BitbucketDiff diff) {
-        //only for current project analysed
         return diff.hasCode() && Objects.equals(diff.getParent(), baseDir.getName());
-    }
-
-    private void handleDiff(BitbucketDiff diff, List<SonarIssue> issues) {
-        final List<SegmentLine> lines = diff.getHunks().stream()
-                .flatMap(hunk -> hunk.getSegments().stream())
-                .filter(segment -> !segment.getType().equals(Comment.REMOVED_ISSUE_TYPE))
-                .flatMap(segment -> segment.getLines().stream().map(line -> new SegmentLine(line, segment)))
-                .collect(Collectors.toList());
-
-        lines.stream()
-                // if both ADDED and CONTEXT hunk points same issue line – prefer ADDED
-                .filter(line -> line.segment.isTypeOfContext() && lines.stream().anyMatch(line1 ->
-                        !line1.segment.isTypeOfContext() && line1.line.getDestination() == line.line.getSource()))
-                //map to collection of issues (with link to segment and line) and allow further work with it
-                .flatMap(line -> issues.stream()
-                        .filter(issue -> BitbucketIssue.isIssueBelongToSegment(line.segment, issue))
-                        .map(issue -> new BitbucketIssue(issue, line.segment, line.line)))
-                .forEach(this::postBitbucketIssue);
     }
 
     /**
@@ -90,17 +81,17 @@ class BitbucketService {
      */
     private void postBitbucketIssue(BitbucketIssue issue) {
         try {
-            BitbucketComment comment = bitbucketClient.postCommentOnPRLine(issue.getIssue().prettyString(), issue.getIssue().getPath(), issue.getIssue().getSafeLine(), issue.getSegment().getType());
+            BitbucketComment comment = bitbucketClient.postCommentOnPRLine(issue.getSonarIssue().prettyString(), issue.getSonarIssue().getPath(), issue.getPostLine(), issue.getSegment().getType());
 
-            LOGGER.debug("Comment \"{}\" has been created ({}) on file {} ({})", issue.getIssue().key(), issue.getSegment().getType(),
-                    issue.getIssue().getPath(), issue.getIssue().getSafeLine());
+            LOGGER.debug("Comment \"{}\" has been created ({}) on file {} ({})", issue.getSonarIssue().key(), issue.getSegment().getType(),
+                    issue.getSonarIssue().getPath(), issue.getPostLine());
 
-            if (issue.getIssue().isTaskNeeded()) {
-                bitbucketClient.postTaskOnComment(issue.getIssue().message(), comment.getId());
+            if (issue.getSonarIssue().isTaskNeeded()) {
+                bitbucketClient.postTaskOnComment(issue.getSonarIssue().message(), comment.getId());
                 LOGGER.debug("Comment \"{}\" has been linked to a Stash task", comment.getId());
             }
         } catch (IOException e) {
-            LOGGER.error("Unable to link SonarQube issue to Stash" + issue.getIssue().key(), e);
+            LOGGER.error("Unable to link SonarQube issue to Stash" + issue.getSonarIssue().key(), e);
         }
     }
 
@@ -177,7 +168,7 @@ class BitbucketService {
     /**
      * Reset all comments linked to a pull-request.
      */
-    void resetComments(BitbucketDiffs diffReport, BitbucketUser sonarUser) {
+    void resetComments(BitbucketDiff.BitbucketDiffs diffReport, BitbucketUser sonarUser) {
         diffReport.getDiffs().stream()
                 .flatMap(BitbucketDiff::getCommentsStream)
                 // only if 1. published by the current Bitbucket user 2. doesn't contain tasks which cannot be deleted
@@ -200,6 +191,19 @@ class BitbucketService {
     private static class SegmentLine {
         private final BitbucketDiff.Line line;
         private final BitbucketDiff.Segment segment;
+    }
+
+    @AllArgsConstructor
+    private static class DiffIssue {
+        private final BitbucketDiff diff;
+        private final SonarIssue issue;
+
+        /**
+         * Diff has not yet comments for this issue.
+         */
+        private boolean isAlreadyCommented() {
+            return diff.getCommentsStream().noneMatch(comment -> comment.getText().equals(issue.prettyString()));
+        }
     }
 
     /**
