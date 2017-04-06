@@ -53,6 +53,7 @@ class BitbucketService {
                                                 new BitbucketIssue(issue, diff, segment, line))))))
                 .filter(BitbucketIssue::isIssueBelongsToDiffAndNew)
                 .filter(BitbucketIssue::isIssueBelongsToLine)
+                .filter(issue -> issue.getSonarIssue().isCommentAndTaskNeeded())
                 .distinct()
                 .collect(Collectors.toSet());
 
@@ -85,13 +86,10 @@ class BitbucketService {
 
         try {
             BitbucketComment comment = bitbucketClient.postCommentOnPRLine(commentRequest);
-
             LOGGER.debug("Comment has been created: " + comment.toString() + " : " + issue.getSonarIssue().getPath());
 
-            if (issue.getSonarIssue().isTaskNeeded()) {
-                bitbucketClient.postTaskOnComment(issue.getSonarIssue().message(), comment.getId());
-                LOGGER.debug("CommentRequest \"{}\" has been linked to a Bitbucket task", comment.getId());
-            }
+            bitbucketClient.postTaskOnComment(issue.getSonarIssue().message(), comment.getId());
+            LOGGER.debug("CommentRequest \"{}\" has been linked to a Bitbucket task", comment.getId());
         } catch (IOException e) {
             LOGGER.error("Unable to link SonarQube issue to Stash" + issue.getSonarIssue().key(), e);
         }

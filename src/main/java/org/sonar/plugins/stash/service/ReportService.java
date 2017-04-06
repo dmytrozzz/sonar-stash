@@ -88,7 +88,7 @@ public class ReportService {
         //        issueTotal, issueThreshold);
         //} else {
         bitbucketService.postSonarDiffReport(issues, diffReport.getDiffs());
-        //bitbucketService.postCoverageReport(pluginConfiguration.getSonarQubeURL(), coverageReport, diffReport, pluginConfiguration.getTaskIssueSeverityThreshold());
+        //bitbucketService.postCoverageReport(pluginConfiguration.getSonarQubeURL(), coverageReport, diffReport, pluginConfiguration.getIssueSeverityThreshold());
         //}
 
 //        if (pluginConfiguration.includeAnalysisOverview()) {

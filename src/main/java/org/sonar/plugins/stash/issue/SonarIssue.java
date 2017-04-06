@@ -17,7 +17,7 @@ public class SonarIssue {
     @Getter
     private final String path;
     @Getter
-    private final boolean taskNeeded;
+    private final boolean commentAndTaskNeeded;
     private final String sonarQubeURL;
 
     public int getSafeLine() {

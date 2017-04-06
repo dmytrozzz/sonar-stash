@@ -109,9 +109,9 @@ public class StashPluginConfiguration {
     public int getIssueThreshold() throws StashConfigurationException {
         int result = 0;
         try {
-            result = getIssueThresholdConfig();
+            result = getIssueCountThresholdConfig();
         } catch (NumberFormatException e) {
-            throw new StashConfigurationException("Unable to get " + BitbucketPlugin.STASH_ISSUE_THRESHOLD + " from plugin configuration", e);
+            throw new StashConfigurationException("Unable to get " + BitbucketPlugin.STASH_ISSUE_COUNT_THRESHOLD + " from plugin configuration", e);
         }
         return result;
     }
@@ -153,8 +153,8 @@ public class StashPluginConfiguration {
                 settings.getString(BitbucketPlugin.SONARQUBE_NICE_URL) : settings.getString(BitbucketPlugin.SONARQUBE_LEGACY_URL);
     }
 
-    private int getIssueThresholdConfig() {
-        return settings.getInt(BitbucketPlugin.STASH_ISSUE_THRESHOLD);
+    private int getIssueCountThresholdConfig() {
+        return settings.getInt(BitbucketPlugin.STASH_ISSUE_COUNT_THRESHOLD);
     }
 
     public int getStashTimeout() {
@@ -169,17 +169,9 @@ public class StashPluginConfiguration {
         return settings.getBoolean(BitbucketPlugin.STASH_RESET_COMMENTS);
     }
 
-    public String getCodeCoverageSeverity() {
-        return settings.getString(BitbucketPlugin.STASH_CODE_COVERAGE_SEVERITY);
+    public String getIssueSeverityThreshold() {
+        return settings.getString(BitbucketPlugin.STASH_SEVERITY_THRESHOLD);
     }
-
-    public String getTaskIssueSeverityThreshold() {
-        return settings.getString(BitbucketPlugin.STASH_TASK_SEVERITY_THRESHOLD);
-    }
-
-//    public String getSonarQubeVersion() {
-//        return settings.getString(CoreProperties.SERVER_VERSION);
-//    }
 
     public boolean includeAnalysisOverview() {
         return settings.getBoolean(BitbucketPlugin.STASH_INCLUDE_ANALYSIS_OVERVIEW);

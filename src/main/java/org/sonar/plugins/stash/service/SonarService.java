@@ -67,7 +67,7 @@ class SonarService {
     }
 
     private SonarIssue convertToBitbucketIssue(PostJobIssue issue) {
-        List<String> taskSeverities = getReportedSeverities(configuration.getTaskIssueSeverityThreshold());
+        List<String> taskSeverities = getReportedSeverities(configuration.getIssueSeverityThreshold());
 
         String path = issue.inputComponent() != null && issue.inputComponent().isFile() ?
                 baseDir.getName() + "/" + ((InputFile) issue.inputComponent()).relativePath() :

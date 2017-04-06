@@ -42,12 +42,11 @@ public class BitbucketPlugin implements Plugin {
     public static final String STASH_PASSWORD = "sonar.stash.password";
     public static final String STASH_PASSWORD_ENVIRONMENT_VARIABLE = "sonar.stash.password.variable";
     public static final String STASH_REVIEWER_APPROVAL = "sonar.stash.reviewer.approval";
-    public static final String STASH_ISSUE_THRESHOLD = "sonar.stash.issue.threshold";
+    public static final String STASH_ISSUE_COUNT_THRESHOLD = "sonar.stash.issue.count.threshold";
     public static final String STASH_TIMEOUT = "sonar.stash.timeout";
     public static final String SONARQUBE_NICE_URL = "sonar.core.serverBaseURL";
     public static final String SONARQUBE_LEGACY_URL = "sonar.host.url";
-    public static final String STASH_TASK_SEVERITY_THRESHOLD = "sonar.stash.task.issue.severity.threshold";
-    public static final String STASH_CODE_COVERAGE_SEVERITY = "sonar.stash.coverage.severity.threshold";
+    public static final String STASH_SEVERITY_THRESHOLD = "sonar.stash.issue.severity.threshold";
     public static final String STASH_INCLUDE_ANALYSIS_OVERVIEW = "sonar.stash.include.overview";
 
     private List getExtensions() {
@@ -78,21 +77,15 @@ public class BitbucketPlugin implements Plugin {
                         .onQualifiers(Qualifiers.PROJECT)
                         .type(PropertyType.BOOLEAN)
                         .defaultValue("false").build(),
-                PropertyDefinition.builder(STASH_ISSUE_THRESHOLD)
-                        .name("Stash issue Threshold")
+                PropertyDefinition.builder(STASH_ISSUE_COUNT_THRESHOLD)
+                        .name("Stash issue count Threshold")
                         .description("Threshold to limit the number of issues pushed to Stash server")
                         .subCategory(CONFIG_PAGE_SUB_CATEGORY_STASH)
                         .onQualifiers(Qualifiers.PROJECT)
                         .defaultValue(DEFAULT_STASH_THRESHOLD_VALUE).build(),
-                PropertyDefinition.builder(STASH_CODE_COVERAGE_SEVERITY)
-                        .name("Stash code coverage severity")
-                        .description("Severity to be associated with Code Coverage issues")
-                        .type(PropertyType.SINGLE_SELECT_LIST)
-                        .subCategory(CONFIG_PAGE_SUB_CATEGORY_STASH)
-                        .options(Stream.concat(SEVERITY_LIST.stream(), Stream.of(SEVERITY_NONE)).collect(Collectors.toList())).build(),
-                PropertyDefinition.builder(STASH_TASK_SEVERITY_THRESHOLD)
+                PropertyDefinition.builder(STASH_SEVERITY_THRESHOLD)
                         .name("Stash tasks severity threshold")
-                        .description("Only create tasks for issues with the same or higher severity")
+                        .description("Only comment and create tasks for issues with the same or higher severity")
                         .type(PropertyType.SINGLE_SELECT_LIST)
                         .subCategory(CONFIG_PAGE_SUB_CATEGORY_STASH)
                         .onQualifiers(Qualifiers.PROJECT)
